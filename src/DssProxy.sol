@@ -51,8 +51,9 @@ contract DssProxy {
         address pit
     ) public payable {
         bytes memory calldata = abi.encodeWithSignature("ethJoin_join(address,bytes32)", bytes32(ethJoin), bytes32(handler));
-        assert(
-            address(handler).call.value(msg.value)(bytes4(keccak256("execute(address,bytes)")), cdpLib, uint256(0x40), calldata.length, calldata)
+        require(
+            address(handler).call.value(msg.value)(bytes4(keccak256("execute(address,bytes)")), cdpLib, uint256(0x40), calldata.length, calldata),
+            "Call failed"
         );
 
         (uint take,) = PitLike(pit).vat().ilks("ETH");
