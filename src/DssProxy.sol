@@ -31,6 +31,12 @@ contract DaiAJoinLike {
 }
 
 contract DssProxy {
+    uint256 constant ONE = 10 ** 27;
+
+    function mul(uint x, uint y) internal pure returns (uint z) {
+        require(y == 0 || (z = x * y) / y == x, "mul-overflow");
+    }
+
     function open(
         address cdpRegistry
     ) public returns (address handler) {
@@ -57,7 +63,7 @@ contract DssProxy {
         );
 
         (uint take,) = PitLike(pit).vat().ilks("ETH");
-        calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), bytes32("ETH"), int(msg.value * 10 ** 27 / take), int(0));
+        calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), bytes32("ETH"), int(mul(msg.value, ONE) / take), int(0));
         CdpHandlerLike(handler).execute(cdpLib, calldata);
     }
 
@@ -75,7 +81,7 @@ contract DssProxy {
         CdpHandlerLike(handler).execute(cdpLib, calldata);
 
         (uint take,) = PitLike(pit).vat().ilks(ilk);
-        calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), bytes32(ilk), int(wad * 10 ** 27 / take), int(0));
+        calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), bytes32(ilk), int(mul(wad, ONE) / take), int(0));
         CdpHandlerLike(handler).execute(cdpLib, calldata);
     } 
 
@@ -87,7 +93,7 @@ contract DssProxy {
         uint wad
     ) public {
         (uint take,) = PitLike(pit).vat().ilks("ETH");
-        bytes memory calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), bytes32("ETH"), -int(wad * 10 ** 27 / take), 0);
+        bytes memory calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), bytes32("ETH"), -int(mul(wad, ONE) / take), 0);
         CdpHandlerLike(handler).execute(cdpLib, calldata);
         
         calldata = abi.encodeWithSignature("ethJoin_exit(address,address,uint256)", bytes32(ethJoin), bytes32(msg.sender), wad);
@@ -103,7 +109,7 @@ contract DssProxy {
         uint wad
     ) public {
         (uint take,) = PitLike(pit).vat().ilks(ilk);
-        bytes memory calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), ilk, -int(wad * 10 ** 27 / take), 0);
+        bytes memory calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), ilk, -int(mul(wad, ONE) / take), 0);
         CdpHandlerLike(handler).execute(cdpLib, calldata);
         
         calldata = abi.encodeWithSignature("gemJoin_exit(address,address,uint256)", bytes32(gemJoin), bytes32(msg.sender), wad);
@@ -119,7 +125,7 @@ contract DssProxy {
         uint wad
     ) public {
         (, uint rate) = PitLike(pit).vat().ilks(ilk);
-        bytes memory calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), ilk, 0, int(wad * 10 ** 27 / rate));
+        bytes memory calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), ilk, 0, int(mul(wad, ONE) / rate));
         CdpHandlerLike(handler).execute(cdpLib, calldata);
 
         calldata = abi.encodeWithSignature("daiJoin_exit(address,address,uint256)", bytes32(daiJoin), bytes32(msg.sender), wad);
@@ -140,7 +146,7 @@ contract DssProxy {
         CdpHandlerLike(handler).execute(cdpLib, calldata);
         
         (, uint rate) = PitLike(pit).vat().ilks(ilk);
-        calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), ilk, 0, -int(wad * 10 ** 27 / rate));
+        calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), ilk, 0, -int(mul(wad, ONE) / rate));
         CdpHandlerLike(handler).execute(cdpLib, calldata);
     }
 
