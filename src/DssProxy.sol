@@ -20,6 +20,7 @@ contract PitLike {
 
 contract VatLike {
     function ilks(bytes32) public view returns (uint, uint);
+    function dai(bytes32) public view returns (uint);
 }
 
 contract GemJoinLike {
@@ -35,6 +36,10 @@ contract DssProxy {
 
     function mul(uint x, uint y) internal pure returns (uint z) {
         require(y == 0 || (z = x * y) / y == x, "mul-overflow");
+    }
+
+    function sub(uint x, uint y) internal pure returns (uint z) {
+        require((z = x - y) <= x, "sub-overflow");
     }
 
     function open(
@@ -125,11 +130,20 @@ contract DssProxy {
         uint wad
     ) public {
         (, uint rate) = PitLike(pit).vat().ilks(ilk);
-        bytes memory calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), ilk, 0, int(mul(wad, ONE) / rate));
-        CdpHandlerLike(handler).execute(cdpLib, calldata);
+        uint dai = PitLike(pit).vat().dai(bytes32(handler));
+
+        if (dai < mul(wad, ONE)) {
+            // If there was already enough DAI generated but not extracted as token, ignore this statement and do the exit directly
+            // Otherwise generate the missing necessart part
+            uint frobVal = sub(mul(wad, ONE), dai) / rate;
+            frobVal = mul(frobVal, rate) < mul(wad, ONE) ? frobVal + 1 : frobVal; // This is neeeded due lack of precision of dart value
+            bytes memory calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), ilk, 0, int(frobVal));
+            CdpHandlerLike(handler).execute(cdpLib, calldata);
+        }
 
         calldata = abi.encodeWithSignature("daiJoin_exit(address,address,uint256)", bytes32(daiJoin), bytes32(msg.sender), wad);
         CdpHandlerLike(handler).execute(cdpLib, calldata);
+        dai = PitLike(pit).vat().dai(bytes32(handler));
     }
 
     function wipe(
@@ -145,8 +159,11 @@ contract DssProxy {
         bytes memory calldata = abi.encodeWithSignature("daiJoin_join(address,bytes32,uint256)", bytes32(daiJoin), bytes32(handler), wad);
         CdpHandlerLike(handler).execute(cdpLib, calldata);
         
+        uint dai = PitLike(pit).vat().dai(bytes32(handler));
         (, uint rate) = PitLike(pit).vat().ilks(ilk);
-        calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), ilk, 0, -int(mul(wad, ONE) / rate));
+
+        // Reduce the whole allocated dai balance: dai / rate
+        calldata = abi.encodeWithSignature("frob(address,bytes32,int256,int256)", bytes32(pit), ilk, 0, -int(dai / rate));
         CdpHandlerLike(handler).execute(cdpLib, calldata);
     }
 

@@ -152,6 +152,22 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(dai.balanceOf(this), 0);
         this.draw(handler, cdpLib, daiJoin, pit, "ETH", 300 ether);
         assertEq(dai.balanceOf(this), 300 ether);
+        (, uint art) = vat.urns("ETH", bytes32(address(handler)));
+        assertEq(art, 300 ether);
+    }
+
+    function testDssProxyDrawAfterDrip() public {
+        deploy();
+        this.file(address(drip), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
+        hevm.warp(now + 1);
+        drip.drip("ETH");
+        CdpHandler handler = CdpHandler(this.open(cdpRegistry));
+        this.lockETH.value(2 ether)(handler, cdpLib, ethJoin, pit);
+        assertEq(dai.balanceOf(this), 0);
+        this.draw(handler, cdpLib, daiJoin, pit, "ETH", 300 ether);
+        assertEq(dai.balanceOf(this), 300 ether);
+        (, uint art) = vat.urns("ETH", bytes32(address(handler)));
+        assertEq(art, mul(300 ether, ONE) / (1.05 * 10 ** 27) + 1); // Extra wei due rounding
     }
 
     function testDssProxyWipe() public {
@@ -162,6 +178,52 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         dai.approve(proxy, 100 ether);
         this.wipe(handler, cdpLib, daiJoin, pit, "ETH", 100 ether);
         assertEq(dai.balanceOf(this), 200 ether);
+    }
+
+    function testDssProxyWipeAfterDrip() public {
+        deploy();
+        this.file(address(drip), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
+        hevm.warp(now + 1);
+        drip.drip("ETH");
+        CdpHandler handler = CdpHandler(this.open(cdpRegistry));
+        this.lockETH.value(2 ether)(handler, cdpLib, ethJoin, pit);
+        this.draw(handler, cdpLib, daiJoin, pit, "ETH", 300 ether);
+        dai.approve(proxy, 100 ether);
+        this.wipe(handler, cdpLib, daiJoin, pit, "ETH", 100 ether);
+        assertEq(dai.balanceOf(this), 200 ether);
+        (, uint art) = vat.urns("ETH", bytes32(address(handler)));
+        assertEq(art, mul(200 ether, ONE) / (1.05 * 10 ** 27) + 1);
+    }
+
+    function testDssProxyWipeAllAfterDrip() public {
+        deploy();
+        this.file(address(drip), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
+        hevm.warp(now + 1);
+        drip.drip("ETH");
+        CdpHandler handler = CdpHandler(this.open(cdpRegistry));
+        this.lockETH.value(2 ether)(handler, cdpLib, ethJoin, pit);
+        this.draw(handler, cdpLib, daiJoin, pit, "ETH", 300 ether);
+        dai.approve(proxy, 300 ether);
+        this.wipe(handler, cdpLib, daiJoin, pit, "ETH", 300 ether);
+        (, uint art) = vat.urns("ETH", bytes32(address(handler)));
+        assertEq(art, 0);
+    }
+
+    function testDssProxyWipeAllAfterDrip2() public {
+        deploy();
+        this.file(address(drip), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
+        hevm.warp(now + 1);
+        drip.drip("ETH");
+        CdpHandler handler = CdpHandler(this.open(cdpRegistry));
+        uint times = 30;
+        this.lockETH.value(2 ether * times)(handler, cdpLib, ethJoin, pit);
+        for (uint i = 0; i < times; i++) {
+            this.draw(handler, cdpLib, daiJoin, pit, "ETH", 300 ether);
+        }        
+        dai.approve(proxy, 300 ether * times);
+        this.wipe(handler, cdpLib, daiJoin, pit, "ETH", 300 ether * times);
+        (, uint art) = vat.urns("ETH", bytes32(address(handler)));
+        assertEq(art, 0);
     }
 
     function testDssProxyLockETHAndDraw() public {
