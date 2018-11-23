@@ -339,7 +339,7 @@ contract DssProxy {
         bytes32 ilk,
         uint wadC,
         uint wadD
-    ) public payable {
+    ) public {
         _gemJoin(handler, cdpLib, gemJoin, wadC);
         _frob(handler, cdpLib, pit, ilk, _getLockDink(pit, ilk, wadC), _getDrawDart(handler, pit, ilk, wadD));
         _daiExit(handler, cdpLib, daiJoin, wadD);
@@ -367,7 +367,7 @@ contract DssProxy {
         address pit,
         uint wadC,
         uint wadD
-    ) public payable {
+    ) public {
         _daiJoin(handler, cdpLib, daiJoin, wadD);
         _frob(handler, cdpLib, pit, "ETH", _getFreeDink(pit, "ETH", wadC), _getWipeDart(handler, pit, "ETH"));
         _ethExit(handler, cdpLib, ethJoin, wadC);
@@ -382,7 +382,7 @@ contract DssProxy {
         bytes32 ilk,
         uint wadC,
         uint wadD
-    ) public payable {
+    ) public {
         _daiJoin(handler, cdpLib, daiJoin, wadD);
         _frob(handler, cdpLib, pit, ilk, _getFreeDink(pit, ilk, wadC), _getWipeDart(handler, pit, ilk));
         _gemExit(handler, cdpLib, gemJoin, wadC);
