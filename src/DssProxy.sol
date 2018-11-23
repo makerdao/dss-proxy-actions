@@ -44,6 +44,137 @@ contract DssProxy {
         require((z = x - y) <= x, "sub-overflow");
     }
 
+    function _ethJoin(
+        address handler,
+        address cdpLib,
+        address ethJoin
+    ) internal {
+        bytes memory calldata = abi.encodeWithSignature(
+            "ethJoin_join(address,bytes32)",
+            bytes32(ethJoin),
+            bytes32(handler)
+        );
+        require(
+            address(handler).call.value(msg.value)(
+                bytes4(keccak256("execute(address,bytes)")),
+                cdpLib,
+                uint256(0x40),
+                calldata.length,
+                calldata
+            ),
+            "Call failed"
+        );
+    }
+
+    function _ethExit(
+        address handler,
+        address cdpLib,
+        address ethJoin,
+        uint wad
+    ) internal {
+        CdpHandlerLike(handler).execute(
+            cdpLib,
+            abi.encodeWithSignature(
+                "ethJoin_exit(address,address,uint256)",
+                bytes32(ethJoin),
+                bytes32(msg.sender),
+                wad
+            )
+        );
+    }
+
+    function _gemJoin(
+        address handler,
+        address cdpLib,
+        address gemJoin,
+        uint wad
+    ) internal {
+        GemJoinLike(gemJoin).gem().transferFrom(msg.sender, this, wad);
+        GemJoinLike(gemJoin).gem().approve(handler, wad);
+        CdpHandlerLike(handler).execute(
+            cdpLib,
+            abi.encodeWithSignature(
+                "gemJoin_join(address,bytes32,uint256)",
+                bytes32(gemJoin),
+                bytes32(handler),
+                wad
+            )
+        );
+    }
+
+    function _gemExit(
+        address handler,
+        address cdpLib,
+        address gemJoin,
+        uint wad
+    ) internal {
+        CdpHandlerLike(handler).execute(
+            cdpLib,
+            abi.encodeWithSignature(
+                "gemJoin_exit(address,address,uint256)",
+                bytes32(gemJoin),
+                bytes32(msg.sender),
+                wad
+            )
+        );
+    }
+
+    function _daiJoin(
+        address handler,
+        address cdpLib,
+        address daiJoin,
+        uint wad
+    ) internal {
+        DaiAJoinLike(daiJoin).dai().transferFrom(msg.sender, this, wad);
+        DaiAJoinLike(daiJoin).dai().approve(handler, wad);
+        CdpHandlerLike(handler).execute(
+            cdpLib,
+            abi.encodeWithSignature(
+                "daiJoin_join(address,bytes32,uint256)",
+                bytes32(daiJoin),
+                bytes32(handler),
+                wad
+            )
+        );
+    }
+
+    function _daiExit(
+        address handler,
+        address cdpLib,
+        address daiJoin,
+        uint wad
+    ) internal {
+        CdpHandlerLike(handler).execute(
+            cdpLib,
+            abi.encodeWithSignature(
+                "daiJoin_exit(address,address,uint256)",
+                bytes32(daiJoin),
+                bytes32(msg.sender),
+                wad
+            )
+        );
+    }
+
+    function _frob(
+        address handler,
+        address cdpLib,
+        address pit,
+        bytes32 ilk,
+        int dink,
+        int dart
+    ) internal {
+        CdpHandlerLike(handler).execute(
+            cdpLib,
+            abi.encodeWithSignature(
+                "frob(address,bytes32,int256,int256)",
+                bytes32(pit),
+                ilk,
+                dink,
+                dart
+            )
+        );
+    }
+
     function _getLockDink(
         address pit,
         bytes32 ilk,
@@ -111,32 +242,8 @@ contract DssProxy {
         address ethJoin,
         address pit
     ) public payable {
-        bytes memory calldata = abi.encodeWithSignature(
-            "ethJoin_join(address,bytes32)",
-            bytes32(ethJoin),
-            bytes32(handler)
-        );
-        require(
-            address(handler).call.value(msg.value)(
-                bytes4(keccak256("execute(address,bytes)")),
-                cdpLib,
-                uint256(0x40),
-                calldata.length,
-                calldata
-            ),
-            "Call failed"
-        );
-
-        CdpHandlerLike(handler).execute(
-            cdpLib,
-            abi.encodeWithSignature(
-                "frob(address,bytes32,int256,int256)",
-                bytes32(pit),
-                bytes32("ETH"),
-                _getLockDink(pit, "ETH", msg.value),
-                int(0)
-            )
-        );
+        _ethJoin(handler, cdpLib, ethJoin);
+        _frob(handler, cdpLib, pit, "ETH", _getLockDink(pit, "ETH", msg.value), 0);
     }
 
     function lockGem(
@@ -147,28 +254,8 @@ contract DssProxy {
         bytes32 ilk,
         uint wad
     ) public {
-        GemJoinLike(gemJoin).gem().transferFrom(msg.sender, this, wad);
-        GemJoinLike(gemJoin).gem().approve(handler, wad);
-        CdpHandlerLike(handler).execute(
-            cdpLib,
-            abi.encodeWithSignature(
-                "gemJoin_join(address,bytes32,uint256)",
-                bytes32(gemJoin),
-                bytes32(handler),
-                wad
-            )
-        );
-
-        CdpHandlerLike(handler).execute(
-            cdpLib,
-            abi.encodeWithSignature(
-                "frob(address,bytes32,int256,int256)",
-                bytes32(pit),
-                bytes32(ilk),
-                _getLockDink(pit, ilk, wad),
-                int(0)
-            )
-        );
+        _gemJoin(handler, cdpLib, gemJoin, wad);
+        _frob(handler, cdpLib, pit, ilk, _getLockDink(pit, ilk, wad), 0);
     } 
 
     function freeETH(
@@ -178,26 +265,8 @@ contract DssProxy {
         address pit,
         uint wad
     ) public {
-        CdpHandlerLike(handler).execute(
-            cdpLib,
-            abi.encodeWithSignature(
-                "frob(address,bytes32,int256,int256)",
-                bytes32(pit),
-                bytes32("ETH"),
-                _getFreeDink(pit, "ETH", wad),
-                0
-            )
-        );
-
-        CdpHandlerLike(handler).execute(
-            cdpLib,
-            abi.encodeWithSignature(
-                "ethJoin_exit(address,address,uint256)",
-                bytes32(ethJoin),
-                bytes32(msg.sender),
-                wad
-            )
-        );
+        _frob(handler, cdpLib, pit, "ETH", _getFreeDink(pit, "ETH", wad), 0);
+        _ethExit(handler, cdpLib, ethJoin, wad);
     }
 
     function freeGem(
@@ -208,26 +277,8 @@ contract DssProxy {
         bytes32 ilk,
         uint wad
     ) public {
-        CdpHandlerLike(handler).execute(
-            cdpLib,
-            abi.encodeWithSignature(
-                "frob(address,bytes32,int256,int256)",
-                bytes32(pit),
-                ilk,
-                _getFreeDink(pit, ilk, wad),
-                0
-            )
-        );
-
-        CdpHandlerLike(handler).execute(
-            cdpLib,
-            abi.encodeWithSignature(
-                "gemJoin_exit(address,address,uint256)",
-                bytes32(gemJoin),
-                bytes32(msg.sender),
-                wad
-            )
-        );
+        _frob(handler, cdpLib, pit, ilk, _getFreeDink(pit, ilk, wad), 0);
+        _gemExit(handler, cdpLib, gemJoin, wad);
     }
 
     function draw(
@@ -238,25 +289,8 @@ contract DssProxy {
         bytes32 ilk,
         uint wad
     ) public {
-        CdpHandlerLike(handler).execute(
-            cdpLib,
-            abi.encodeWithSignature(
-                "frob(address,bytes32,int256,int256)",
-                bytes32(pit), ilk,
-                0,
-                _getDrawDart(handler, pit, ilk, wad)
-            )
-        );
-
-        CdpHandlerLike(handler).execute(
-            cdpLib,
-            abi.encodeWithSignature(
-                "daiJoin_exit(address,address,uint256)",
-                bytes32(daiJoin),
-                bytes32(msg.sender),
-                wad
-            )
-        );
+        _frob(handler, cdpLib, pit, ilk, 0, _getDrawDart(handler, pit, ilk, wad));
+        _daiExit(handler, cdpLib, daiJoin, wad);
     }
 
     function wipe(
@@ -267,28 +301,8 @@ contract DssProxy {
         bytes32 ilk,
         uint wad
     ) public {
-        DaiAJoinLike(daiJoin).dai().transferFrom(msg.sender, this, wad);
-        DaiAJoinLike(daiJoin).dai().approve(handler, wad);
-        CdpHandlerLike(handler).execute(
-            cdpLib,
-            abi.encodeWithSignature(
-                "daiJoin_join(address,bytes32,uint256)",
-                bytes32(daiJoin),
-                bytes32(handler),
-                wad
-            )
-        );
-
-        CdpHandlerLike(handler).execute(
-            cdpLib,
-            abi.encodeWithSignature(
-                "frob(address,bytes32,int256,int256)",
-                bytes32(pit),
-                ilk,
-                0,
-                _getWipeDart(handler, pit, ilk)
-            )
-        );
+        _daiJoin(handler, cdpLib, daiJoin, wad);
+        _frob(handler, cdpLib, pit, ilk, 0, _getWipeDart(handler, pit, ilk));
     }
 
     function lockETHAndDraw(
@@ -299,8 +313,9 @@ contract DssProxy {
         address pit,
         uint wadD
     ) public payable {
-        lockETH(handler, cdpLib, ethJoin, pit);
-        draw(handler, cdpLib, daiJoin, pit, "ETH", wadD);
+        _ethJoin(handler, cdpLib, ethJoin);
+        _frob(handler, cdpLib, pit, "ETH", _getLockDink(pit, "ETH", msg.value), _getDrawDart(handler, pit, "ETH", wadD));
+        _daiExit(handler, cdpLib, daiJoin, wadD);
     }
 
     function openLockETHAndDraw(
@@ -325,8 +340,9 @@ contract DssProxy {
         uint wadC,
         uint wadD
     ) public payable {
-        lockGem(handler, cdpLib, gemJoin, pit, ilk, wadC);
-        draw(handler, cdpLib, daiJoin, pit, ilk, wadD);
+        _gemJoin(handler, cdpLib, gemJoin, wadC);
+        _frob(handler, cdpLib, pit, ilk, _getLockDink(pit, ilk, wadC), _getDrawDart(handler, pit, ilk, wadD));
+        _daiExit(handler, cdpLib, daiJoin, wadD);
     }
 
     function openLockGemAndDraw(
@@ -352,8 +368,9 @@ contract DssProxy {
         uint wadC,
         uint wadD
     ) public payable {
-        wipe(handler, cdpLib, daiJoin, pit, "ETH", wadD);
-        freeETH(handler, cdpLib, ethJoin, pit, wadC);
+        _daiJoin(handler, cdpLib, daiJoin, wadD);
+        _frob(handler, cdpLib, pit, "ETH", _getFreeDink(pit, "ETH", wadC), _getWipeDart(handler, pit, "ETH"));
+        _ethExit(handler, cdpLib, ethJoin, wadC);
     }
 
     function wipeAndFreeGem(
@@ -366,7 +383,8 @@ contract DssProxy {
         uint wadC,
         uint wadD
     ) public payable {
-        wipe(handler, cdpLib, daiJoin, pit, ilk, wadD);
-        freeGem(handler, cdpLib, gemJoin, pit, ilk, wadC);
+        _daiJoin(handler, cdpLib, daiJoin, wadD);
+        _frob(handler, cdpLib, pit, ilk, _getFreeDink(pit, ilk, wadC), _getWipeDart(handler, pit, ilk));
+        _gemExit(handler, cdpLib, gemJoin, wadC);
     }
 }
