@@ -2,3 +2,6 @@
 	path = lib/ds-test
 	url = https://github.com/dapphub/ds-test
 
+[submodule "lib/mcd-cdp-handler"]
+	path = lib/mcd-cdp-handler
+	url = https://github.com/makerdao/mcd-cdp-handler/
