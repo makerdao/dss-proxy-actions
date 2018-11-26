@@ -10,8 +10,11 @@ contract ProxyCalls {
     DSProxy proxy;
     DssProxy proxyLib;
 
-    function open(address) public returns (address) {
-        return address(proxy.execute(proxyLib, msg.data));
+    function open(address) public returns (address addr) {
+        bytes memory response = proxy.execute(proxyLib, msg.data);
+        assembly {
+            addr := mload(add(response, 0x20))
+        }
     }
 
     function lockETH(address, address, address, address) public payable {
@@ -42,7 +45,7 @@ contract ProxyCalls {
         assert(address(proxy).call.value(msg.value)(bytes4(keccak256("execute(address,bytes)")), proxyLib, uint256(0x40), msg.data.length, msg.data));
     }
 
-    function openLockETHAndDraw(address, address, address, address, address, uint) public payable returns (address result) {
+    function openLockETHAndDraw(address, address, address, address, address, uint) public payable returns (address addr) {
         address target = proxy;
         bytes memory calldata = abi.encodeWithSignature("execute(address,bytes)", bytes32(address(proxyLib)), msg.data);
         assembly {
@@ -53,7 +56,7 @@ contract ProxyCalls {
             mstore(response, size)
             returndatacopy(add(response, 0x20), 0, size)
 
-            result := mload(add(response, 0x20))
+            addr := mload(add(response, 0x60))
 
             switch iszero(succeeded)
             case 1 {
@@ -67,8 +70,11 @@ contract ProxyCalls {
         proxy.execute(proxyLib, msg.data);
     }
 
-    function openLockGemAndDraw(address, address, address, address, address, bytes32, uint, uint) public returns (address) {
-        return address(proxy.execute(proxyLib, msg.data));
+    function openLockGemAndDraw(address, address, address, address, address, bytes32, uint, uint) public returns (address addr) {
+        bytes memory response = proxy.execute(proxyLib, msg.data);
+        assembly {
+            addr := mload(add(response, 0x20))
+        }
     }
 
     function wipeAndFreeETH(address, address, address, address, address, uint, uint) public {
@@ -90,7 +96,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         cdpLib = new CdpLib();
         DSProxyFactory factory = new DSProxyFactory();
         proxyLib = new DssProxy();
-        proxy = factory.build();
+        proxy = DSProxy(factory.build());
     }
 
     function ink(bytes32 ilk, address urn) public returns (uint inkV) {

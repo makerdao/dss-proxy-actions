@@ -11,7 +11,7 @@ contract CdpHandlerLike {
 }
 
 contract CdpRegistryLike {
-    function create() public returns (address);
+    function build() public returns (address);
 }
 
 contract PitLike {
@@ -226,7 +226,7 @@ contract DssProxy {
     function open(
         address cdpRegistry
     ) public returns (address handler) {
-        handler = CdpRegistryLike(cdpRegistry).create();
+        handler = CdpRegistryLike(cdpRegistry).build();
     }
 
     function give(
