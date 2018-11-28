@@ -99,7 +99,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         proxy = DSProxy(factory.build());
     }
 
-    function ink(bytes32 ilk, address urn) public returns (uint inkV) {
+    function ink(bytes32 ilk, address urn) public view returns (uint inkV) {
         (inkV,) = vat.urns(ilk, bytes32(urn));
     }
 
