@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity >=0.5.0;
 
 contract GemLike {
     function approve(address, uint) public;
@@ -7,11 +7,11 @@ contract GemLike {
 
 contract CdpHandlerLike {
     function setOwner(address) public;
-    function execute(address, bytes) public returns (bytes32);
+    function execute(address, bytes memory) public returns (bytes32);
 }
 
 contract CdpRegistryLike {
-    function build() public returns (address);
+    function build() public returns (address payable);
 }
 
 contract PitLike {
@@ -37,7 +37,7 @@ contract DssProxy {
     // Public methods
     function open(
         address cdpRegistry
-    ) public returns (address handler) {
+    ) public returns (address payable handler) {
         handler = CdpRegistryLike(cdpRegistry).build();
     }
 
@@ -54,21 +54,18 @@ contract DssProxy {
         address ethJoin,
         address pit
     ) public payable {
-        bytes memory data = abi.encodeWithSignature(
-            "lockETH(address,address)",
-            bytes32(uint(address(ethJoin))),
-            bytes32(uint(address(pit)))
-        );
-        require(
-            address(handler).call.value(msg.value)(
-                bytes4(keccak256("execute(address,bytes)")),
+        (bool success,) = address(handler).call.value(msg.value)(
+            abi.encodeWithSignature(
+                "execute(address,bytes)",
                 cdpLib,
-                uint256(0x40),
-                data.length,
-                data
-            ),
-            "Call failed"
+                abi.encodeWithSignature(
+                    "lockETH(address,address)",
+                    bytes32(uint(address(ethJoin))),
+                    bytes32(uint(address(pit)))
+                )
+            )
         );
+        require(success, "Call failed");
     }
 
     function lockGem(
@@ -184,24 +181,21 @@ contract DssProxy {
         address pit,
         uint wadD
     ) public payable {
-        bytes memory data = abi.encodeWithSignature(
-            "lockETHAndDraw(address,address,address,address,uint256)",
-            bytes32(uint(address(ethJoin))),
-            bytes32(uint(address(daiJoin))),
-            bytes32(uint(address(pit))),
-            bytes32(uint(msg.sender)),
-            bytes32(wadD)
-        );
-        require(
-            address(handler).call.value(msg.value)(
-                bytes4(keccak256("execute(address,bytes)")),
+        (bool success,) = address(handler).call.value(msg.value)(
+            abi.encodeWithSignature(
+                "execute(address,bytes)",
                 cdpLib,
-                uint256(0x40),
-                data.length,
-                data
-            ),
-            "Call failed"
+                abi.encodeWithSignature(
+                    "lockETHAndDraw(address,address,address,address,uint256)",
+                    bytes32(uint(address(ethJoin))),
+                    bytes32(uint(address(daiJoin))),
+                    bytes32(uint(address(pit))),
+                    bytes32(uint(msg.sender)),
+                    bytes32(wadD)
+                )
+            )
         );
+        require(success, "Call failed");
     }
 
     function openLockETHAndDraw(
@@ -211,7 +205,7 @@ contract DssProxy {
         address daiJoin,
         address pit,
         uint wadD
-    ) public payable returns (address handler) {
+    ) public payable returns (address payable handler) {
         handler = open(cdpRegistry);
         lockETHAndDraw(handler, cdpLib, ethJoin, daiJoin, pit, wadD);
     }
@@ -252,7 +246,7 @@ contract DssProxy {
         bytes32 ilk,
         uint wadC,
         uint wadD
-    ) public returns (address handler) {
+    ) public returns (address payable handler) {
         handler = open(cdpRegistry);
         lockGemAndDraw(handler, cdpLib, gemJoin, daiJoin, pit, ilk, wadC, wadD);
     }
