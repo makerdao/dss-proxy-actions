@@ -2,7 +2,7 @@ pragma solidity >=0.5.0;
 
 import "ds-test/test.sol";
 
-import "./DssProxy.sol";
+import "./DssProxyActions.sol";
 
 import {DssDeployTest, CdpLib, CdpRegistry, CdpHandler, DSProxyFactory, DSProxy} from "mcd-cdp-handler/CdpHandler.t.sol";
 
@@ -88,7 +88,7 @@ contract ProxyCalls {
     }
 }
 
-contract DssProxyTest is DssDeployTest, ProxyCalls {
+contract DssProxyActionsTest is DssDeployTest, ProxyCalls {
     CdpRegistry cdpRegistry;
     CdpLib cdpLib;
 
@@ -97,7 +97,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         cdpRegistry = new CdpRegistry();
         cdpLib = new CdpLib();
         DSProxyFactory factory = new DSProxyFactory();
-        proxyLib = address(new DssProxy());
+        proxyLib = address(new DssProxyActions());
         proxy = DSProxy(factory.build());
     }
 
@@ -105,13 +105,13 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         (inkV,) = vat.urns(ilk, urn);
     }
 
-    function testDssProxyCreateCDP() public {
+    function testDssProxyActionsCreateCDP() public {
         CdpHandler handler = CdpHandler(this.open(address(cdpRegistry)));
         assertEq(handler.owner(), address(proxy));
         assertTrue(cdpRegistry.inRegistry(address(handler)));
     }
 
-    function testDssProxyLockETH() public {
+    function testDssProxyActionsLockETH() public {
         deploy();
         uint initialBalance = address(this).balance;
         CdpHandler handler = CdpHandler(this.open(address(cdpRegistry)));
@@ -121,7 +121,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(address(this).balance, initialBalance - 2 ether);
     }
 
-    function testDssProxyLockGem() public {
+    function testDssProxyActionsLockGem() public {
         deploy();
         dgx.mint(5 ether);
         CdpHandler handler = CdpHandler(this.open(address(cdpRegistry)));
@@ -132,7 +132,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(dgx.balanceOf(address(this)), 3 ether);
     }
 
-    function testDssProxyfreeETH() public {
+    function testDssProxyActionsfreeETH() public {
         deploy();
         uint initialBalance = address(this).balance;
         CdpHandler handler = CdpHandler(this.open(address(cdpRegistry)));
@@ -142,7 +142,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(address(this).balance, initialBalance - 1 ether);
     }
 
-    function testDssProxyfreeGem() public {
+    function testDssProxyActionsfreeGem() public {
         deploy();
         dgx.mint(5 ether);
         CdpHandler handler = CdpHandler(this.open(address(cdpRegistry)));
@@ -153,7 +153,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(dgx.balanceOf(address(this)), 4 ether);
     }
 
-    function testDssProxyDraw() public {
+    function testDssProxyActionsDraw() public {
         deploy();
         CdpHandler handler = CdpHandler(this.open(address(cdpRegistry)));
         this.lockETH.value(2 ether)(address(handler), address(cdpLib), address(ethJoin), address(pit));
@@ -164,7 +164,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(art, 300 ether);
     }
 
-    function testDssProxyDrawAfterDrip() public {
+    function testDssProxyActionsDrawAfterDrip() public {
         deploy();
         this.file(address(drip), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
         hevm.warp(now + 1);
@@ -178,7 +178,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(art, mul(300 ether, ONE) / (1.05 * 10 ** 27) + 1); // Extra wei due rounding
     }
 
-    function testDssProxyWipe() public {
+    function testDssProxyActionsWipe() public {
         deploy();
         CdpHandler handler = CdpHandler(this.open(address(cdpRegistry)));
         this.lockETH.value(2 ether)(address(handler), address(cdpLib), address(ethJoin), address(pit));
@@ -188,7 +188,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(dai.balanceOf(address(this)), 200 ether);
     }
 
-    function testDssProxyWipeAfterDrip() public {
+    function testDssProxyActionsWipeAfterDrip() public {
         deploy();
         this.file(address(drip), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
         hevm.warp(now + 1);
@@ -203,7 +203,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(art, mul(200 ether, ONE) / (1.05 * 10 ** 27) + 1);
     }
 
-    function testDssProxyWipeAllAfterDrip() public {
+    function testDssProxyActionsWipeAllAfterDrip() public {
         deploy();
         this.file(address(drip), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
         hevm.warp(now + 1);
@@ -217,7 +217,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(art, 0);
     }
 
-    function testDssProxyWipeAllAfterDrip2() public {
+    function testDssProxyActionsWipeAllAfterDrip2() public {
         deploy();
         this.file(address(drip), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
         hevm.warp(now + 1);
@@ -234,7 +234,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(art, 0);
     }
 
-    function testDssProxyLockETHAndDraw() public {
+    function testDssProxyActionsLockETHAndDraw() public {
         deploy();
         CdpHandler handler = CdpHandler(this.open(address(cdpRegistry)));
         uint initialBalance = address(this).balance;
@@ -246,7 +246,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(address(this).balance, initialBalance - 2 ether);
     }
 
-    function testDssProxyOpenLockETHAndDraw() public {
+    function testDssProxyActionsOpenLockETHAndDraw() public {
         deploy();
         uint initialBalance = address(this).balance;
         assertEq(dai.balanceOf(address(this)), 0);
@@ -256,7 +256,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(address(this).balance, initialBalance - 2 ether);
     }
 
-    function testDssProxyLockGemAndDraw() public {
+    function testDssProxyActionsLockGemAndDraw() public {
         deploy();
         dgx.mint(5 ether);
         CdpHandler handler = CdpHandler(this.open(address(cdpRegistry)));
@@ -269,7 +269,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(dgx.balanceOf(address(this)), 3 ether);
     }
 
-    function testDssProxyOpenLockGemAndDraw() public {
+    function testDssProxyActionsOpenLockGemAndDraw() public {
         deploy();
         dgx.mint(5 ether);
         dgx.approve(address(proxy), 2 ether);
@@ -280,7 +280,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(dgx.balanceOf(address(this)), 3 ether);
     }
 
-    function testDssProxyWipeAndFreeETH() public {
+    function testDssProxyActionsWipeAndFreeETH() public {
         deploy();
         CdpHandler handler = CdpHandler(this.open(address(cdpRegistry)));
         uint initialBalance = address(this).balance;
@@ -292,7 +292,7 @@ contract DssProxyTest is DssDeployTest, ProxyCalls {
         assertEq(address(this).balance, initialBalance - 0.5 ether);
     }
 
-    function testDssProxyWipeAndFreeGem() public {
+    function testDssProxyActionsWipeAndFreeGem() public {
         deploy();
         dgx.mint(5 ether);
         CdpHandler handler = CdpHandler(this.open(address(cdpRegistry)));

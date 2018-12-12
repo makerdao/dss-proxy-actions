@@ -1,7 +1,7 @@
-# dss-proxy
+# dss-proxy-actions
 Initial version of the proxy functions to be used via ds-proxy. These functions are based on mcd-cdp-handler as CDP owner.
 
-https://github.com/makerdao/dss-proxy
+https://github.com/makerdao/dss-proxy-actions
 
 `open`: creates a new handler
 

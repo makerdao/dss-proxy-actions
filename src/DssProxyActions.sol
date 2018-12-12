@@ -1,4 +1,4 @@
-/// DssProxy.sol
+/// DssProxyActions.sol
 
 // Copyright (C) 2018 Gonzalo Balabasquer <gbalabasquer@gmail.com>
 //
@@ -48,7 +48,7 @@ contract DaiJoinLike {
     function dai() public returns(GemLike);
 }
 
-contract DssProxy {
+contract DssProxyActions {
     uint256 constant ONE = 10 ** 27;
 
     // Public methods
