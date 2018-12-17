@@ -18,6 +18,10 @@ contract ProxyCalls {
         }
     }
 
+    function allow(address, bytes12, address, bool) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
     function lockETH(address, address, address, bytes12) public payable {
         (bool success,) = address(proxy).call.value(msg.value)(abi.encodeWithSignature("execute(address,bytes)", proxyLib, msg.data));
         require(success, "");
@@ -89,6 +93,16 @@ contract ProxyCalls {
     }
 }
 
+contract FakeUser {
+    function doMove(
+        DssCdpManager manager,
+        bytes12 cdp,
+        address dst
+    ) public {
+        manager.move(cdp, dst);
+    }
+}
+
 contract DssProxyActionsTest is DssDeployTest, ProxyCalls {
     DssCdpManager manager;
 
@@ -108,6 +122,14 @@ contract DssProxyActionsTest is DssDeployTest, ProxyCalls {
         bytes12 cdp = this.open(address(manager));
         assertEq(bytes32(cdp), bytes32(bytes12(uint96(1))));
         assertEq(manager.cdps(cdp), address(proxy));
+    }
+
+    function testDssProxyActionsTransferCDP() public {
+        bytes12 cdp = this.open(address(manager));
+        FakeUser user = new FakeUser();
+        this.allow(address(manager), cdp, address(user), true);
+        user.doMove(manager, cdp, address(123));
+        assertEq(manager.cdps(cdp), address(123));
     }
 
     function testDssProxyActionsLockETH() public {

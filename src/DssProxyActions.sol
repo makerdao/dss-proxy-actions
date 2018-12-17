@@ -25,6 +25,7 @@ contract GemLike {
 contract CdpManagerLike {
     function open() public returns (bytes12);
     function give(bytes12, address) public;
+    function allow(bytes12, address, bool) public;
     function getUrn(bytes12) public view returns (bytes32);
     function frob(address, bytes12, bytes32, int, int) public;
     function exit(address, bytes12, address, uint) public;
@@ -140,6 +141,15 @@ contract DssProxyActions {
         address guy
     ) public {
         CdpManagerLike(cdpManager).give(cdp, guy);
+    }
+
+    function allow(
+        address cdpManager,
+        bytes12 cdp,
+        address guy,
+        bool ok
+    ) public {
+        CdpManagerLike(cdpManager).allow(cdp, guy, ok);
     }
 
     function lockETH(
