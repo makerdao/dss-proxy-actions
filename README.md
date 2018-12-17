@@ -1,11 +1,11 @@
 # dss-proxy-actions
-Initial version of the proxy functions to be used via ds-proxy. These functions are based on mcd-cdp-handler as CDP owner.
+Initial version of the proxy functions to be used via ds-proxy. These functions are based on dss-cdp-manager as CDP registry.
 
 https://github.com/makerdao/dss-proxy-actions
 
-`open`: creates a new handler
+`open`: creates a registry in CdpManager
 
-`give`: sets owner of a handler, it could also create a new authority for it - TBD
+`give`: transfer the ownership of a CDP in the internal registry of CdpManager
 
 `lockETH`: deposits ETH in adapter and executes `frob` increasing locked collateral
 
