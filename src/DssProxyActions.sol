@@ -22,11 +22,6 @@ contract GemLike {
     function transferFrom(address, address, uint) public;
 }
 
-contract CdpHandlerLike {
-    function setOwner(address) public;
-    function execute(address, bytes memory) public returns (bytes32);
-}
-
 contract CdpManagerLike {
     function open() public returns (bytes12);
     function give(bytes12, address) public;
@@ -46,19 +41,16 @@ contract VatLike {
 
 contract ETHJoinLike {
     function join(bytes32) public payable;
-    function exit(bytes32, address, uint) public;
 }
 
 contract GemJoinLike {
     function gem() public returns (GemLike);
     function join(bytes32, uint) public payable;
-    function exit(bytes32, address, uint) public;
 }
 
 contract DaiJoinLike {
     function dai() public returns (GemLike);
     function join(bytes32, uint) public payable;
-    function exit(address, uint) public;
 }
 
 contract DssProxyActions {
@@ -124,23 +116,15 @@ contract DssProxyActions {
         ETHJoinLike(apt).join.value(msg.value)(urn);
     }
 
-    function ethJoin_exit(address apt, bytes32 urn, address guy, uint wad) public {
-        ETHJoinLike(apt).exit(urn, guy, wad);
-    }
-
     function gemJoin_join(address apt, bytes32 urn, uint wad) public payable {
         GemJoinLike(apt).gem().transferFrom(msg.sender, address(this), wad);
-        GemJoinLike(apt).gem().approve(apt, uint(-1));
+        GemJoinLike(apt).gem().approve(apt, wad);
         GemJoinLike(apt).join(urn, wad);
-    }
-
-    function gemJoin_exit(address apt, bytes32 urn, address guy, uint wad) public {
-        GemJoinLike(apt).exit(urn, guy, wad);
     }
 
     function daiJoin_join(address apt, bytes32 urn, uint wad) public {
         DaiJoinLike(apt).dai().transferFrom(msg.sender, address(this), wad);
-        DaiJoinLike(apt).dai().approve(apt, uint(-1));
+        DaiJoinLike(apt).dai().approve(apt, wad);
         DaiJoinLike(apt).join(urn, wad);
     }
 
