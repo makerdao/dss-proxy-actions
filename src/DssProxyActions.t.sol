@@ -4,7 +4,7 @@ import "ds-test/test.sol";
 
 import "./DssProxyActions.sol";
 
-import {DssDeployTest, DssCdpManager} from "dss-cdp-manager/DssCdpManager.t.sol";
+import {DssDeployTestBase, DssCdpManager} from "dss-cdp-manager/DssCdpManager.t.sol";
 import {DSProxyFactory, DSProxy} from "ds-proxy/proxy.sol";
 
 contract ProxyCalls {
@@ -103,7 +103,7 @@ contract FakeUser {
     }
 }
 
-contract DssProxyActionsTest is DssDeployTest, ProxyCalls {
+contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     DssCdpManager manager;
 
     function setUp() public {
@@ -251,7 +251,7 @@ contract DssProxyActionsTest is DssDeployTest, ProxyCalls {
         this.lockETH.value(2 ether * times)(address(manager), address(ethJoin), address(pit), cdp);
         for (uint i = 0; i < times; i++) {
             this.draw(address(manager), address(daiJoin), address(pit), cdp, "ETH", 300 ether);
-        }        
+        }
         dai.approve(address(proxy), 300 ether * times);
         this.wipe(address(manager), address(daiJoin), address(pit), cdp, "ETH", 300 ether * times);
         (, uint art) = vat.urns("ETH", manager.getUrn(cdp));
