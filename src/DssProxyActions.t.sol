@@ -4,7 +4,8 @@ import "ds-test/test.sol";
 
 import "./DssProxyActions.sol";
 
-import {DssDeployTestBase, DssCdpManager} from "dss-cdp-manager/DssCdpManager.t.sol";
+import {DssDeployTestBase} from "dss-deploy/DssDeploy.t.base.sol";
+import {DssCdpManager} from "dss-cdp-manager/DssCdpManager.sol";
 import {DSProxyFactory, DSProxy} from "ds-proxy/proxy.sol";
 
 contract ProxyCalls {
