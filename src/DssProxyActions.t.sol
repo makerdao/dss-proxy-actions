@@ -189,9 +189,9 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
 
     function testDssProxyActionsDrawAfterDrip() public {
         deploy();
-        this.file(address(drip), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
+        this.file(address(jug), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
         hevm.warp(now + 1);
-        drip.drip("ETH");
+        jug.drip("ETH");
         bytes12 cdp = this.open(address(manager));
         this.lockETH.value(2 ether)(address(manager), address(ethJoin), address(pit), cdp);
         assertEq(dai.balanceOf(address(this)), 0);
@@ -215,9 +215,9 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
 
     function testDssProxyActionsWipeAfterDrip() public {
         deploy();
-        this.file(address(drip), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
+        this.file(address(jug), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
         hevm.warp(now + 1);
-        drip.drip("ETH");
+        jug.drip("ETH");
         bytes12 cdp = this.open(address(manager));
         this.lockETH.value(2 ether)(address(manager), address(ethJoin), address(pit), cdp);
         this.draw(address(manager), address(daiJoin), address(pit), cdp, "ETH", 300 ether);
@@ -230,9 +230,9 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
 
     function testDssProxyActionsWipeAllAfterDrip() public {
         deploy();
-        this.file(address(drip), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
+        this.file(address(jug), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
         hevm.warp(now + 1);
-        drip.drip("ETH");
+        jug.drip("ETH");
         bytes12 cdp = this.open(address(manager));
         this.lockETH.value(2 ether)(address(manager), address(ethJoin), address(pit), cdp);
         this.draw(address(manager), address(daiJoin), address(pit), cdp, "ETH", 300 ether);
@@ -244,9 +244,9 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
 
     function testDssProxyActionsWipeAllAfterDrip2() public {
         deploy();
-        this.file(address(drip), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
+        this.file(address(jug), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
         hevm.warp(now + 1);
-        drip.drip("ETH");
+        jug.drip("ETH");
         bytes12 cdp = this.open(address(manager));
         uint times = 30;
         this.lockETH.value(2 ether * times)(address(manager), address(ethJoin), address(pit), cdp);
