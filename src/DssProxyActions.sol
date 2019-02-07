@@ -38,6 +38,7 @@ contract PitLike {
 contract VatLike {
     function ilks(bytes32) public view returns (uint, uint);
     function dai(bytes32) public view returns (uint);
+    function urns(bytes32, bytes32) public view returns (uint, uint);
 }
 
 contract ETHJoinLike {
@@ -109,8 +110,13 @@ contract DssProxyActions {
     ) internal view returns (int dart) {
         uint dai = PitLike(pit).vat().dai(urn);
         (, uint rate) = PitLike(pit).vat().ilks(ilk);
+
+        (, uint art) = PitLike(pit).vat().urns(ilk, urn);
+
         // Decrease the whole allocated dai balance: dai / rate
-        dart = - int(dai / rate);
+        dart = int(dai / rate);
+        // We need to check the calculated dart is not higher than urn.art
+        dart = uint(dart) <= art ? - dart : - int(art);
     }
 
     // Public methods
