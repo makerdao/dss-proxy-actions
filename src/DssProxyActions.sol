@@ -68,13 +68,18 @@ contract DssProxyActions {
         require((z = x - y) <= x, "sub-overflow");
     }
 
+    function toInt(uint x) internal pure returns (int y) {
+        y = int(x);
+        require(y >= 0, "int-overflow");
+    }
+
     function _getLockDink(
         address pit,
         bytes32 ilk,
         uint wad
     ) internal view returns (int dink) {
         (uint take,) = PitLike(pit).vat().ilks(ilk);
-        dink = int(mul(wad, ONE) / take);
+        dink = toInt(mul(wad, ONE) / take);
     }
 
     function _getFreeDink(
@@ -83,7 +88,7 @@ contract DssProxyActions {
         uint wad
     ) internal view returns (int dink) {
         (uint take,) = PitLike(pit).vat().ilks(ilk);
-        dink = - int(mul(wad, ONE) / take);
+        dink = - toInt(mul(wad, ONE) / take);
     }
 
     function _getDrawDart(
@@ -98,8 +103,8 @@ contract DssProxyActions {
         if (dai < mul(wad, ONE)) {
             // If there was already enough DAI generated but not extracted as token, ignore this statement and do the exit directly
             // Otherwise generate the missing necessary part
-            dart = int(sub(mul(wad, ONE), dai) / rate);
-            dart = int(mul(uint(dart), rate) < mul(wad, ONE) ? dart + 1 : dart); // This is neeeded due lack of precision of dart value
+            dart = toInt(sub(mul(wad, ONE), dai) / rate);
+            dart = mul(uint(dart), rate) < mul(wad, ONE) ? dart + 1 : dart; // This is neeeded due lack of precision of dart value
         }
     }
 
@@ -114,9 +119,9 @@ contract DssProxyActions {
         (, uint art) = PitLike(pit).vat().urns(ilk, urn);
 
         // Decrease the whole allocated dai balance: dai / rate
-        dart = int(dai / rate);
+        dart = toInt(dai / rate);
         // We need to check the calculated dart is not higher than urn.art
-        dart = uint(dart) <= art ? - dart : - int(art);
+        dart = uint(dart) <= art ? - dart : - toInt(art);
     }
 
     // Public methods
