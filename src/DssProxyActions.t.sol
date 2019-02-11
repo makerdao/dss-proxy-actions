@@ -19,6 +19,10 @@ contract ProxyCalls {
         }
     }
 
+    function give(address, bytes12, address) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
     function allow(address, bytes12, address, bool) public {
         proxy.execute(proxyLib, msg.data);
     }
@@ -126,7 +130,13 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(manager.cdps(cdp), address(proxy));
     }
 
-    function testDssProxyActionsTransferCDP() public {
+    function testDssProxyActionsGiveCDP() public {
+        bytes12 cdp = this.open(address(manager));
+        this.give(address(manager), cdp, address(123));
+        assertEq(manager.cdps(cdp), address(123));
+    }
+
+    function testDssProxyActionsGiveCDPAllowedUser() public {
         bytes12 cdp = this.open(address(manager));
         FakeUser user = new FakeUser();
         this.allow(address(manager), cdp, address(user), true);
