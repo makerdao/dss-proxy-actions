@@ -329,7 +329,9 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         bytes12 cdp = this.open(address(manager));
         this.lockETHAndDraw.value(2 ether)(address(manager), address(ethJoin), address(daiJoin), address(pit), cdp, 300 ether);
 
-        ethJoin.join.value(2 ether)(bytes32(bytes20(address(this))));
+        weth.deposit.value(2 ether)();
+        weth.approve(address(ethJoin), 2 ether);
+        ethJoin.join(bytes32(bytes20(address(this))), 2 ether);
         pit.frob("ETH", bytes32(bytes20(address(this))), bytes32(bytes20(address(this))), bytes32(bytes20(address(this))), 1 ether, 150 ether);
         daiMove.move(bytes32(bytes20(address(this))), manager.getUrn(cdp), 150 ether);
 

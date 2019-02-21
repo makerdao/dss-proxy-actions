@@ -20,6 +20,8 @@ pragma solidity >=0.5.0;
 contract GemLike {
     function approve(address, uint) public;
     function transferFrom(address, address, uint) public;
+    function deposit() public payable;
+    function withdraw(uint) public;
 }
 
 contract CdpManagerLike {
@@ -39,10 +41,6 @@ contract VatLike {
     function ilks(bytes32) public view returns (uint, uint);
     function dai(bytes32) public view returns (uint);
     function urns(bytes32, bytes32) public view returns (uint, uint);
-}
-
-contract ETHJoinLike {
-    function join(bytes32) public payable;
 }
 
 contract GemJoinLike {
@@ -126,7 +124,9 @@ contract DssProxyActions {
 
     // Public methods
     function ethJoin_join(address apt, bytes32 urn) public payable {
-        ETHJoinLike(apt).join.value(msg.value)(urn);
+        GemJoinLike(apt).gem().deposit.value(msg.value)();
+        GemJoinLike(apt).gem().approve(address(apt), msg.value);
+        GemJoinLike(apt).join(urn, msg.value);
     }
 
     function gemJoin_join(address apt, bytes32 urn, uint wad) public payable {
@@ -194,7 +194,9 @@ contract DssProxyActions {
         uint wad
     ) public {
         CdpManagerLike(cdpManager).frob(pit, cdp, "ETH", _getFreeDink(pit, "ETH", wad), 0);
-        CdpManagerLike(cdpManager).exit(ethJoin, cdp, msg.sender, wad);
+        CdpManagerLike(cdpManager).exit(ethJoin, cdp, address(this), wad);
+        GemJoinLike(ethJoin).gem().withdraw(wad);
+        msg.sender.transfer(wad);
     }
 
     function freeGem(
@@ -300,7 +302,9 @@ contract DssProxyActions {
         bytes32 urn = CdpManagerLike(cdpManager).getUrn(cdp);
         daiJoin_join(daiJoin, urn, wadD);
         CdpManagerLike(cdpManager).frob(pit, cdp, "ETH", _getFreeDink(pit, "ETH", wadC), _getWipeDart(pit, urn, "ETH"));
-        CdpManagerLike(cdpManager).exit(ethJoin, cdp, msg.sender, wadC);
+        CdpManagerLike(cdpManager).exit(ethJoin, cdp, address(this), wadC);
+        GemJoinLike(ethJoin).gem().withdraw(wadC);
+        msg.sender.transfer(wadC);
     }
 
     function wipeAndFreeGem(
