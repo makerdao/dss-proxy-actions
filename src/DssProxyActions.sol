@@ -146,10 +146,11 @@ contract DssProxyActions {
         address cdpManager,
         address ethJoin,
         address vat,
-        bytes12 cdp
+        bytes12 cdp,
+        bytes32 ilk
     ) public payable {
         ethJoin_join(ethJoin, CdpManagerLike(cdpManager).getUrn(cdp));
-        CdpManagerLike(cdpManager).frob(vat, cdp, "ETH", toInt(msg.value), 0);
+        CdpManagerLike(cdpManager).frob(vat, cdp, ilk, toInt(msg.value), 0);
     }
 
     function lockGem(
@@ -169,9 +170,10 @@ contract DssProxyActions {
         address ethJoin,
         address vat,
         bytes12 cdp,
+        bytes32 ilk,
         uint wad
     ) public {
-        CdpManagerLike(cdpManager).frob(vat, cdp, "ETH", -toInt(wad), 0);
+        CdpManagerLike(cdpManager).frob(vat, cdp, ilk, -toInt(wad), 0);
         CdpManagerLike(cdpManager).exit(ethJoin, cdp, address(this), wad);
         GemJoinLike(ethJoin).gem().withdraw(wad);
         msg.sender.transfer(wad);
@@ -220,11 +222,12 @@ contract DssProxyActions {
         address daiJoin,
         address vat,
         bytes12 cdp,
+        bytes32 ilk,
         uint wadD
     ) public payable {
         bytes32 urn = CdpManagerLike(cdpManager).getUrn(cdp);
         ethJoin_join(ethJoin, urn);
-        CdpManagerLike(cdpManager).frob(vat, cdp, "ETH", toInt(msg.value), _getDrawDart(vat, urn, "ETH", wadD));
+        CdpManagerLike(cdpManager).frob(vat, cdp, ilk, toInt(msg.value), _getDrawDart(vat, urn, ilk, wadD));
         CdpManagerLike(cdpManager).exit(daiJoin, cdp, msg.sender, wadD);
     }
 
@@ -233,10 +236,11 @@ contract DssProxyActions {
         address ethJoin,
         address daiJoin,
         address vat,
+        bytes32 ilk,
         uint wadD
     ) public payable returns (bytes12 cdp) {
         cdp = CdpManagerLike(cdpManager).open();
-        lockETHAndDraw(cdpManager, ethJoin, daiJoin, vat, cdp, wadD);
+        lockETHAndDraw(cdpManager, ethJoin, daiJoin, vat, cdp, ilk, wadD);
     }
 
     function lockGemAndDraw(
@@ -274,12 +278,13 @@ contract DssProxyActions {
         address daiJoin,
         address vat,
         bytes12 cdp,
+        bytes32 ilk,
         uint wadC,
         uint wadD
     ) public {
         bytes32 urn = CdpManagerLike(cdpManager).getUrn(cdp);
         daiJoin_join(daiJoin, urn, wadD);
-        CdpManagerLike(cdpManager).frob(vat, cdp, "ETH", -toInt(wadC), _getWipeDart(vat, urn, "ETH"));
+        CdpManagerLike(cdpManager).frob(vat, cdp, ilk, -toInt(wadC), _getWipeDart(vat, urn, ilk));
         CdpManagerLike(cdpManager).exit(ethJoin, cdp, address(this), wadC);
         GemJoinLike(ethJoin).gem().withdraw(wadC);
         msg.sender.transfer(wadC);
