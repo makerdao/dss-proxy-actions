@@ -27,6 +27,10 @@ contract ProxyCalls {
         proxy.execute(proxyLib, msg.data);
     }
 
+    function frob(address, bytes32, bytes32, bytes32, bytes32, int, int) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
     function lockETH(address, address, address, uint) public payable {
         (bool success,) = address(proxy).call.value(msg.value)(abi.encodeWithSignature("execute(address,bytes)", proxyLib, msg.data));
         require(success, "");
@@ -142,6 +146,21 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.allow(address(manager), cdp, address(user), true);
         user.doMove(manager, cdp, address(123));
         assertEq(manager.lads(cdp), address(123));
+    }
+
+    function testNativeFrob() public {
+        assertEq(dai.balanceOf(address(this)), 0);
+        weth.deposit.value(1 ether)();
+        weth.approve(address(ethJoin), uint(-1));
+        ethJoin.join(bytes32(bytes20(address(proxy))), 1 ether);
+
+        this.frob(address(vat), "ETH", bytes32(bytes20(address(proxy))), bytes32(bytes20(address(proxy))), bytes32(bytes20(address(this))), 0.5 ether, 60 ether);
+        assertEq(vat.gem("ETH", bytes32(bytes20(address(proxy)))), 0.5 ether);
+        assertEq(vat.dai(bytes32(bytes20(address(this)))), mul(ONE, 60 ether));
+
+        daiJoin.exit(bytes32(bytes20(address(this))), address(this), 60 ether);
+        assertEq(dai.balanceOf(address(this)), 60 ether);
+        assertEq(vat.dai(bytes32(bytes20(address(this)))), 0);
     }
 
     function testLockETH() public {

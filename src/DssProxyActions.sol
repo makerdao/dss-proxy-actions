@@ -35,6 +35,7 @@ contract CdpManagerLike {
 }
 
 contract VatLike {
+    function frob(bytes32, bytes32, bytes32, bytes32, int, int) public;
     function ilks(bytes32) public view returns (uint, uint, uint, uint, uint);
     function dai(bytes32) public view returns (uint);
     function urns(bytes32, bytes32) public view returns (uint, uint);
@@ -118,6 +119,18 @@ contract DssProxyActions {
         DaiJoinLike(apt).dai().transferFrom(msg.sender, address(this), wad);
         DaiJoinLike(apt).dai().approve(apt, wad);
         DaiJoinLike(apt).join(urn, wad);
+    }
+
+    function frob(
+        address vat,
+        bytes32 i,
+        bytes32 u,
+        bytes32 v,
+        bytes32 w,
+        int dink,
+        int dart
+    ) public {
+        VatLike(vat).frob(i, u, v, w, dink, dart);
     }
 
     function open(
