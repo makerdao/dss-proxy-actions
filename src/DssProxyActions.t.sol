@@ -27,6 +27,18 @@ contract ProxyCalls {
         proxy.execute(proxyLib, msg.data);
     }
 
+    function hope(address, address) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
+    function nope(address, address) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
+    function quit(address, address, uint, bytes32) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
     function frob(address, bytes32, bytes32, bytes32, bytes32, int, int) public {
         proxy.execute(proxyLib, msg.data);
     }
@@ -114,6 +126,7 @@ contract FakeUser {
 
 contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     DssCdpManager manager;
+    bytes32 proxyUrn;
 
     function setUp() public {
         super.setUp();
@@ -121,6 +134,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         DSProxyFactory factory = new DSProxyFactory();
         proxyLib = address(new DssProxyActions());
         proxy = DSProxy(factory.build());
+        proxyUrn = bytes32(bytes20(address(proxy)));
         deploy();
     }
 
@@ -152,15 +166,15 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(dai.balanceOf(address(this)), 0);
         weth.deposit.value(1 ether)();
         weth.approve(address(ethJoin), uint(-1));
-        ethJoin.join(bytes32(bytes20(address(proxy))), 1 ether);
+        ethJoin.join(proxyUrn, 1 ether);
 
-        this.frob(address(vat), "ETH", bytes32(bytes20(address(proxy))), bytes32(bytes20(address(proxy))), bytes32(bytes20(address(this))), 0.5 ether, 60 ether);
-        assertEq(vat.gem("ETH", bytes32(bytes20(address(proxy)))), 0.5 ether);
-        assertEq(vat.dai(bytes32(bytes20(address(this)))), mul(ONE, 60 ether));
+        this.frob(address(vat), "ETH", proxyUrn, proxyUrn, urn, 0.5 ether, 60 ether);
+        assertEq(vat.gem("ETH", proxyUrn), 0.5 ether);
+        assertEq(vat.dai(urn), mul(ONE, 60 ether));
 
-        daiJoin.exit(bytes32(bytes20(address(this))), address(this), 60 ether);
+        daiJoin.exit(urn, address(this), 60 ether);
         assertEq(dai.balanceOf(address(this)), 60 ether);
-        assertEq(vat.dai(bytes32(bytes20(address(this)))), 0);
+        assertEq(vat.dai(urn), 0);
     }
 
     function testLockETH() public {
@@ -350,11 +364,40 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
 
         weth.deposit.value(2 ether)();
         weth.approve(address(ethJoin), 2 ether);
-        ethJoin.join(bytes32(bytes20(address(this))), 2 ether);
-        vat.frob("ETH", bytes32(bytes20(address(this))), bytes32(bytes20(address(this))), bytes32(bytes20(address(this))), 1 ether, 150 ether);
-        daiMove.move(bytes32(bytes20(address(this))), manager.getUrn(cdp), 150 ether);
+        ethJoin.join(urn, 2 ether);
+        vat.frob("ETH", urn, urn, urn, 1 ether, 150 ether);
+        daiMove.move(urn, manager.getUrn(cdp), 150 ether);
 
         dai.approve(address(proxy), 300 ether);
         this.wipe(address(manager), address(daiJoin), address(vat), cdp, 300 ether);
+    }
+
+    function testHopeNope() public {
+        assertEq(vat.can(address(proxy), address(123)), 0);
+        this.hope(address(vat), address(123));
+        assertEq(vat.can(address(proxy), address(123)), 1);
+        this.nope(address(vat), address(123));
+        assertEq(vat.can(address(proxy), address(123)), 0);
+    }
+
+    function testQuit() public {
+        uint cdp = this.open(address(manager), "ETH");
+        this.lockETHAndDraw.value(1 ether)(address(manager), address(ethJoin), address(daiJoin), address(vat), cdp, 50 ether);
+
+        (uint ink, uint art) = vat.urns("ETH", manager.getUrn(cdp));
+        assertEq(ink, 1 ether);
+        assertEq(art, 50 ether);
+        (ink, art) = vat.urns("ETH", proxyUrn);
+        assertEq(ink, 0);
+        assertEq(art, 0);
+
+        this.hope(address(vat), address(manager));
+        this.quit(address(manager), address(vat), cdp, proxyUrn);
+        (ink, art) = vat.urns("ETH", manager.getUrn(cdp));
+        assertEq(ink, 0);
+        assertEq(art, 0);
+        (ink, art) = vat.urns("ETH", proxyUrn);
+        assertEq(ink, 1 ether);
+        assertEq(art, 50 ether);
     }
 }

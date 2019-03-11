@@ -32,6 +32,7 @@ contract CdpManagerLike {
     function allow(uint, address, bool) public;
     function frob(address, uint, int, int) public;
     function exit(address, uint, address, uint) public;
+    function quit(address, uint, bytes32) public;
 }
 
 contract VatLike {
@@ -51,6 +52,10 @@ contract DaiJoinLike {
     function join(bytes32, uint) public payable;
 }
 
+contract HopeLike {
+    function hope(address) public;
+    function nope(address) public;
+}
 
 contract DssProxyActions {
     uint256 constant ONE = 10 ** 27;
@@ -155,6 +160,29 @@ contract DssProxyActions {
         bool ok
     ) public {
         CdpManagerLike(cdpManager).allow(cdp, guy, ok);
+    }
+
+    function hope(
+        address obj,
+        address guy
+    ) public {
+        HopeLike(obj).hope(guy);
+    }
+
+    function nope(
+        address obj,
+        address guy
+    ) public {
+        HopeLike(obj).nope(guy);
+    }
+
+    function quit(
+        address cdpManager,
+        address vat,
+        uint cdp,
+        bytes32 dst
+    ) public {
+        CdpManagerLike(cdpManager).quit(vat, cdp, dst);
     }
 
     function lockETH(
