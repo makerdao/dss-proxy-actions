@@ -24,7 +24,7 @@ contract GemLike {
     function withdraw(uint) public;
 }
 
-contract CdpManagerLike {
+contract ManagerLike {
     function ilks(uint) public view returns (bytes32);
     function getUrn(uint) public view returns (bytes32);
     function open(bytes32) public returns (uint);
@@ -126,42 +126,6 @@ contract DssProxyActions {
         DaiJoinLike(apt).join(urn, wad);
     }
 
-    function frob(
-        address vat,
-        bytes32 i,
-        bytes32 u,
-        bytes32 v,
-        bytes32 w,
-        int dink,
-        int dart
-    ) public {
-        VatLike(vat).frob(i, u, v, w, dink, dart);
-    }
-
-    function open(
-        address cdpManager,
-        bytes32 ilk
-    ) public returns (uint cdp) {
-        cdp = CdpManagerLike(cdpManager).open(ilk);
-    }
-
-    function give(
-        address cdpManager,
-        uint cdp,
-        address guy
-    ) public {
-        CdpManagerLike(cdpManager).move(cdp, guy);
-    }
-
-    function allow(
-        address cdpManager,
-        uint cdp,
-        address guy,
-        bool ok
-    ) public {
-        CdpManagerLike(cdpManager).allow(cdp, guy, ok);
-    }
-
     function hope(
         address obj,
         address guy
@@ -176,111 +140,149 @@ contract DssProxyActions {
         HopeLike(obj).nope(guy);
     }
 
+    function open(
+        address manager,
+        bytes32 ilk
+    ) public returns (uint cdp) {
+        cdp = ManagerLike(manager).open(ilk);
+    }
+
+    function give(
+        address manager,
+        uint cdp,
+        address guy
+    ) public {
+        ManagerLike(manager).move(cdp, guy);
+    }
+
+    function allow(
+        address manager,
+        uint cdp,
+        address guy,
+        bool ok
+    ) public {
+        ManagerLike(manager).allow(cdp, guy, ok);
+    }
+
+    function frob(
+        address manager,
+        address vat,
+        uint cdp,
+        int dink,
+        int dart
+    ) public {
+        ManagerLike(manager).frob(vat, cdp, dink, dart);
+    }
+
+    function exit(address manager, address join, uint cdp, address guy, uint wad) public {
+        ManagerLike(manager).exit(join, cdp, guy, wad);
+    }
+
     function quit(
-        address cdpManager,
+        address manager,
         address vat,
         uint cdp,
         bytes32 dst
     ) public {
-        CdpManagerLike(cdpManager).quit(vat, cdp, dst);
+        ManagerLike(manager).quit(vat, cdp, dst);
     }
 
     function lockETH(
-        address cdpManager,
+        address manager,
         address ethJoin,
         address vat,
         uint cdp
     ) public payable {
-        ethJoin_join(ethJoin, CdpManagerLike(cdpManager).getUrn(cdp));
-        CdpManagerLike(cdpManager).frob(vat, cdp, toInt(msg.value), 0);
+        ethJoin_join(ethJoin, ManagerLike(manager).getUrn(cdp));
+        frob(manager, vat, cdp, toInt(msg.value), 0);
     }
 
     function lockGem(
-        address cdpManager,
+        address manager,
         address gemJoin,
         address vat,
         uint cdp,
         uint wad
     ) public {
-        gemJoin_join(gemJoin, CdpManagerLike(cdpManager).getUrn(cdp), wad);
-        CdpManagerLike(cdpManager).frob(vat, cdp, toInt(wad), 0);
+        gemJoin_join(gemJoin, ManagerLike(manager).getUrn(cdp), wad);
+        frob(manager, vat, cdp, toInt(wad), 0);
     }
 
     function freeETH(
-        address cdpManager,
+        address manager,
         address ethJoin,
         address vat,
         uint cdp,
         uint wad
     ) public {
-        CdpManagerLike(cdpManager).frob(vat, cdp, -toInt(wad), 0);
-        CdpManagerLike(cdpManager).exit(ethJoin, cdp, address(this), wad);
+        frob(manager, vat, cdp, -toInt(wad), 0);
+        exit(manager, ethJoin, cdp, address(this), wad);
         GemJoinLike(ethJoin).gem().withdraw(wad);
         msg.sender.transfer(wad);
     }
 
     function freeGem(
-        address cdpManager,
+        address manager,
         address gemJoin,
         address vat,
         uint cdp,
         uint wad
     ) public {
-        CdpManagerLike(cdpManager).frob(vat, cdp, -toInt(wad), 0);
-        CdpManagerLike(cdpManager).exit(gemJoin, cdp, msg.sender, wad);
+        frob(manager, vat, cdp, -toInt(wad), 0);
+        exit(manager, gemJoin, cdp, msg.sender, wad);
     }
 
     function draw(
-        address cdpManager,
+        address manager,
         address daiJoin,
         address vat,
         uint cdp,
         uint wad
     ) public {
-        CdpManagerLike(cdpManager).frob(vat, cdp, 0, _getDrawDart(vat, CdpManagerLike(cdpManager).getUrn(cdp), CdpManagerLike(cdpManager).ilks(cdp), wad));
-        CdpManagerLike(cdpManager).exit(daiJoin, cdp, msg.sender, wad);
+        frob(manager, vat, cdp, 0, _getDrawDart(vat, ManagerLike(manager).getUrn(cdp), ManagerLike(manager).ilks(cdp), wad));
+        exit(manager, daiJoin, cdp, msg.sender, wad);
     }
 
     function wipe(
-        address cdpManager,
+        address manager,
         address daiJoin,
         address vat,
         uint cdp,
         uint wad
     ) public {
-        bytes32 urn = CdpManagerLike(cdpManager).getUrn(cdp);
+        bytes32 urn = ManagerLike(manager).getUrn(cdp);
         daiJoin_join(daiJoin, urn, wad);
-        CdpManagerLike(cdpManager).frob(vat, cdp, 0, _getWipeDart(vat, urn, CdpManagerLike(cdpManager).ilks(cdp)));
+        frob(manager, vat, cdp, 0, _getWipeDart(vat, urn, ManagerLike(manager).ilks(cdp)));
     }
 
     function lockETHAndDraw(
-        address cdpManager,
+        address manager,
         address ethJoin,
         address daiJoin,
         address vat,
         uint cdp,
         uint wadD
     ) public payable {
-        bytes32 urn = CdpManagerLike(cdpManager).getUrn(cdp);
+        bytes32 urn = ManagerLike(manager).getUrn(cdp);
         ethJoin_join(ethJoin, urn);
-        CdpManagerLike(cdpManager).frob(vat, cdp, toInt(msg.value), _getDrawDart(vat, urn, CdpManagerLike(cdpManager).ilks(cdp), wadD));
-        CdpManagerLike(cdpManager).exit(daiJoin, cdp, msg.sender, wadD);
+        frob(manager, vat, cdp, toInt(msg.value), _getDrawDart(vat, urn, ManagerLike(manager).ilks(cdp), wadD));
+        exit(manager, daiJoin, cdp, msg.sender, wadD);
     }
 
     function openLockETHAndDraw(
-        address cdpManager,
+        address manager,
         address ethJoin,
         address daiJoin,
         address vat,
         bytes32 ilk,
         uint wadD
     ) public payable returns (uint cdp) {
-        cdp = CdpManagerLike(cdpManager).open(ilk);
-        lockETHAndDraw(cdpManager, ethJoin, daiJoin, vat, cdp, wadD);
+        cdp = ManagerLike(manager).open(ilk);
+        lockETHAndDraw(manager, ethJoin, daiJoin, vat, cdp, wadD);
     }
 
     function lockGemAndDraw(
-        address cdpManager,
+        address manager,
         address gemJoin,
         address daiJoin,
         address vat,
@@ -288,14 +290,14 @@ contract DssProxyActions {
         uint wadC,
         uint wadD
     ) public{
-        bytes32 urn = CdpManagerLike(cdpManager).getUrn(cdp);
+        bytes32 urn = ManagerLike(manager).getUrn(cdp);
         gemJoin_join(gemJoin, urn, wadC);
-        CdpManagerLike(cdpManager).frob(vat, cdp, toInt(wadC), _getDrawDart(vat, urn, CdpManagerLike(cdpManager).ilks(cdp), wadD));
-        CdpManagerLike(cdpManager).exit(daiJoin, cdp, msg.sender, wadD);
+        frob(manager, vat, cdp, toInt(wadC), _getDrawDart(vat, urn, ManagerLike(manager).ilks(cdp), wadD));
+        exit(manager, daiJoin, cdp, msg.sender, wadD);
     }
 
     function openLockGemAndDraw(
-        address cdpManager,
+        address manager,
         address gemJoin,
         address daiJoin,
         address vat,
@@ -303,12 +305,12 @@ contract DssProxyActions {
         uint wadC,
         uint wadD
     ) public returns (uint cdp) {
-        cdp = CdpManagerLike(cdpManager).open(ilk);
-        lockGemAndDraw(cdpManager, gemJoin, daiJoin, vat, cdp, wadC, wadD);
+        cdp = ManagerLike(manager).open(ilk);
+        lockGemAndDraw(manager, gemJoin, daiJoin, vat, cdp, wadC, wadD);
     }
 
     function wipeAndFreeETH(
-        address cdpManager,
+        address manager,
         address ethJoin,
         address daiJoin,
         address vat,
@@ -316,16 +318,16 @@ contract DssProxyActions {
         uint wadC,
         uint wadD
     ) public {
-        bytes32 urn = CdpManagerLike(cdpManager).getUrn(cdp);
+        bytes32 urn = ManagerLike(manager).getUrn(cdp);
         daiJoin_join(daiJoin, urn, wadD);
-        CdpManagerLike(cdpManager).frob(vat, cdp, -toInt(wadC), _getWipeDart(vat, urn, CdpManagerLike(cdpManager).ilks(cdp)));
-        CdpManagerLike(cdpManager).exit(ethJoin, cdp, address(this), wadC);
+        frob(manager, vat, cdp, -toInt(wadC), _getWipeDart(vat, urn, ManagerLike(manager).ilks(cdp)));
+        exit(manager, ethJoin, cdp, address(this), wadC);
         GemJoinLike(ethJoin).gem().withdraw(wadC);
         msg.sender.transfer(wadC);
     }
 
     function wipeAndFreeGem(
-        address cdpManager,
+        address manager,
         address gemJoin,
         address daiJoin,
         address vat,
@@ -333,9 +335,9 @@ contract DssProxyActions {
         uint wadC,
         uint wadD
     ) public {
-        bytes32 urn = CdpManagerLike(cdpManager).getUrn(cdp);
+        bytes32 urn = ManagerLike(manager).getUrn(cdp);
         daiJoin_join(daiJoin, urn, wadD);
-        CdpManagerLike(cdpManager).frob(vat, cdp, -toInt(wadC), _getWipeDart(vat, urn, CdpManagerLike(cdpManager).ilks(cdp)));
-        CdpManagerLike(cdpManager).exit(gemJoin, cdp, msg.sender, wadC);
+        frob(manager, vat, cdp, -toInt(wadC), _getWipeDart(vat, urn, ManagerLike(manager).ilks(cdp)));
+        exit(manager, gemJoin, cdp, msg.sender, wadC);
     }
 }

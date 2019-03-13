@@ -35,11 +35,15 @@ contract ProxyCalls {
         proxy.execute(proxyLib, msg.data);
     }
 
-    function quit(address, address, uint, bytes32) public {
+    function frob(address, address, uint, int, int) public {
         proxy.execute(proxyLib, msg.data);
     }
 
-    function frob(address, bytes32, bytes32, bytes32, bytes32, int, int) public {
+    function exit(address, address, uint, address, uint) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
+    function quit(address, address, uint, bytes32) public {
         proxy.execute(proxyLib, msg.data);
     }
 
@@ -162,19 +166,21 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(manager.lads(cdp), address(123));
     }
 
-    function testNativeFrob() public {
+    function testFrob() public {
+        uint cdp = this.open(address(manager), "ETH");
+
         assertEq(dai.balanceOf(address(this)), 0);
         weth.deposit.value(1 ether)();
         weth.approve(address(ethJoin), uint(-1));
-        ethJoin.join(proxyUrn, 1 ether);
+        ethJoin.join(manager.getUrn(cdp), 1 ether);
 
-        this.frob(address(vat), "ETH", proxyUrn, proxyUrn, urn, 0.5 ether, 60 ether);
-        assertEq(vat.gem("ETH", proxyUrn), 0.5 ether);
-        assertEq(vat.dai(urn), mul(ONE, 60 ether));
+        this.frob(address(manager), address(vat), cdp, 0.5 ether, 60 ether);
+        assertEq(vat.gem("ETH", manager.getUrn(cdp)), 0.5 ether);
+        assertEq(vat.dai(manager.getUrn(cdp)), mul(ONE, 60 ether));
 
-        daiJoin.exit(urn, address(this), 60 ether);
+        this.exit(address(manager), address(daiJoin), cdp, address(this), 60 ether);
         assertEq(dai.balanceOf(address(this)), 60 ether);
-        assertEq(vat.dai(urn), 0);
+        assertEq(vat.dai(manager.getUrn(cdp)), 0);
     }
 
     function testLockETH() public {
