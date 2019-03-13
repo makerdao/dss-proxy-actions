@@ -194,13 +194,13 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     }
 
     function testLockGem() public {
-        dgx.mint(5 ether);
-        uint cdp = this.open(address(manager), "DGX");
-        dgx.approve(address(proxy), 2 ether);
-        assertEq(ink("DGX", manager.getUrn(cdp)), 0);
-        this.lockGem(address(manager), address(dgxJoin), address(vat), cdp, 2 ether);
-        assertEq(ink("DGX", manager.getUrn(cdp)), 2 ether);
-        assertEq(dgx.balanceOf(address(this)), 3 ether);
+        col.mint(5 ether);
+        uint cdp = this.open(address(manager), "COL");
+        col.approve(address(proxy), 2 ether);
+        assertEq(ink("COL", manager.getUrn(cdp)), 0);
+        this.lockGem(address(manager), address(colJoin), address(vat), cdp, 2 ether);
+        assertEq(ink("COL", manager.getUrn(cdp)), 2 ether);
+        assertEq(col.balanceOf(address(this)), 3 ether);
     }
 
     function testfreeETH() public {
@@ -213,13 +213,13 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     }
 
     function testfreeGem() public {
-        dgx.mint(5 ether);
-        uint cdp = this.open(address(manager), "DGX");
-        dgx.approve(address(proxy), 2 ether);
-        this.lockGem(address(manager), address(dgxJoin), address(vat), cdp, 2 ether);
-        this.freeGem(address(manager), address(dgxJoin), address(vat), cdp, 1 ether);
-        assertEq(ink("DGX", manager.getUrn(cdp)), 1 ether);
-        assertEq(dgx.balanceOf(address(this)), 4 ether);
+        col.mint(5 ether);
+        uint cdp = this.open(address(manager), "COL");
+        col.approve(address(proxy), 2 ether);
+        this.lockGem(address(manager), address(colJoin), address(vat), cdp, 2 ether);
+        this.freeGem(address(manager), address(colJoin), address(vat), cdp, 1 ether);
+        assertEq(ink("COL", manager.getUrn(cdp)), 1 ether);
+        assertEq(col.balanceOf(address(this)), 4 ether);
     }
 
     function testDraw() public {
@@ -320,25 +320,25 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     }
 
     function testLockGemAndDraw() public {
-        dgx.mint(5 ether);
-        uint cdp = this.open(address(manager), "DGX");
-        dgx.approve(address(proxy), 2 ether);
-        assertEq(ink("DGX", manager.getUrn(cdp)), 0);
+        col.mint(5 ether);
+        uint cdp = this.open(address(manager), "COL");
+        col.approve(address(proxy), 2 ether);
+        assertEq(ink("COL", manager.getUrn(cdp)), 0);
         assertEq(dai.balanceOf(address(this)), 0);
-        this.lockGemAndDraw(address(manager), address(dgxJoin), address(daiJoin), address(vat), cdp, 2 ether, 10 ether);
-        assertEq(ink("DGX", manager.getUrn(cdp)), 2 ether);
+        this.lockGemAndDraw(address(manager), address(colJoin), address(daiJoin), address(vat), cdp, 2 ether, 10 ether);
+        assertEq(ink("COL", manager.getUrn(cdp)), 2 ether);
         assertEq(dai.balanceOf(address(this)), 10 ether);
-        assertEq(dgx.balanceOf(address(this)), 3 ether);
+        assertEq(col.balanceOf(address(this)), 3 ether);
     }
 
     function testOpenLockGemAndDraw() public {
-        dgx.mint(5 ether);
-        dgx.approve(address(proxy), 2 ether);
+        col.mint(5 ether);
+        col.approve(address(proxy), 2 ether);
         assertEq(dai.balanceOf(address(this)), 0);
-        uint cdp = this.openLockGemAndDraw(address(manager), address(dgxJoin), address(daiJoin), address(vat), "DGX", 2 ether, 10 ether);
-        assertEq(ink("DGX", manager.getUrn(cdp)), 2 ether);
+        uint cdp = this.openLockGemAndDraw(address(manager), address(colJoin), address(daiJoin), address(vat), "COL", 2 ether, 10 ether);
+        assertEq(ink("COL", manager.getUrn(cdp)), 2 ether);
         assertEq(dai.balanceOf(address(this)), 10 ether);
-        assertEq(dgx.balanceOf(address(this)), 3 ether);
+        assertEq(col.balanceOf(address(this)), 3 ether);
     }
 
     function testWipeAndFreeETH() public {
@@ -353,15 +353,15 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     }
 
     function testWipeAndFreeGem() public {
-        dgx.mint(5 ether);
-        uint cdp = this.open(address(manager), "DGX");
-        dgx.approve(address(proxy), 2 ether);
-        this.lockGemAndDraw(address(manager), address(dgxJoin), address(daiJoin), address(vat), cdp, 2 ether, 10 ether);
+        col.mint(5 ether);
+        uint cdp = this.open(address(manager), "COL");
+        col.approve(address(proxy), 2 ether);
+        this.lockGemAndDraw(address(manager), address(colJoin), address(daiJoin), address(vat), cdp, 2 ether, 10 ether);
         dai.approve(address(proxy), 8 ether);
-        this.wipeAndFreeGem(address(manager), address(dgxJoin), address(daiJoin), address(vat), cdp, 1.5 ether, 8 ether);
-        assertEq(ink("DGX", manager.getUrn(cdp)), 0.5 ether);
+        this.wipeAndFreeGem(address(manager), address(colJoin), address(daiJoin), address(vat), cdp, 1.5 ether, 8 ether);
+        assertEq(ink("COL", manager.getUrn(cdp)), 0.5 ether);
         assertEq(dai.balanceOf(address(this)), 2 ether);
-        assertEq(dgx.balanceOf(address(this)), 4.5 ether);
+        assertEq(col.balanceOf(address(this)), 4.5 ether);
     }
 
     function testPreventHigherDaiOnWipe() public {
