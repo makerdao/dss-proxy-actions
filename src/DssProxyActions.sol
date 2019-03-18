@@ -36,7 +36,6 @@ contract ManagerLike {
 }
 
 contract VatLike {
-    function frob(bytes32, bytes32, bytes32, bytes32, int, int) public;
     function ilks(bytes32) public view returns (uint, uint, uint, uint, uint);
     function dai(bytes32) public view returns (uint);
     function urns(bytes32, bytes32) public view returns (uint, uint);
