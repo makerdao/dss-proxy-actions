@@ -372,7 +372,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         weth.approve(address(ethJoin), 2 ether);
         ethJoin.join(urn, 2 ether);
         vat.frob("ETH", urn, urn, urn, 1 ether, 150 ether);
-        daiMove.move(urn, manager.getUrn(cdp), 150 ether);
+        vat.move(urn, manager.getUrn(cdp), 150 ether);
 
         dai.approve(address(proxy), 300 ether);
         this.wipe(address(manager), address(daiJoin), address(vat), cdp, 300 ether);
