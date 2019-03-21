@@ -233,7 +233,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     }
 
     function testDrawAfterDrip() public {
-        this.file(address(jug), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
+        this.file(address(jug), bytes32("ETH"), bytes32("duty"), uint(1.05 * 10 ** 27));
         hevm.warp(now + 1);
         jug.drip("ETH");
         uint cdp = this.open(address(manager), "ETH");
@@ -257,7 +257,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     }
 
     function testWipeAfterDrip() public {
-        this.file(address(jug), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
+        this.file(address(jug), bytes32("ETH"), bytes32("duty"), uint(1.05 * 10 ** 27));
         hevm.warp(now + 1);
         jug.drip("ETH");
         uint cdp = this.open(address(manager), "ETH");
@@ -271,7 +271,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     }
 
     function testWipeAllAfterDrip() public {
-        this.file(address(jug), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
+        this.file(address(jug), bytes32("ETH"), bytes32("duty"), uint(1.05 * 10 ** 27));
         hevm.warp(now + 1);
         jug.drip("ETH");
         uint cdp = this.open(address(manager), "ETH");
@@ -284,7 +284,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     }
 
     function testWipeAllAfterDrip2() public {
-        this.file(address(jug), bytes32("ETH"), bytes32("tax"), uint(1.05 * 10 ** 27));
+        this.file(address(jug), bytes32("ETH"), bytes32("duty"), uint(1.05 * 10 ** 27));
         hevm.warp(now + 1);
         jug.drip("ETH");
         uint cdp = this.open(address(manager), "ETH");
