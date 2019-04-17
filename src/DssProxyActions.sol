@@ -30,7 +30,7 @@ contract ManagerLike {
     function vat() public view returns (address);
     function open(bytes32) public returns (uint);
     function give(uint, address) public;
-    function allow(uint, address, bool) public;
+    function allow(uint, address, uint) public;
     function frob(uint, int, int) public;
     function frob(uint, address, int, int) public;
     function flux(uint, address, uint) public;
@@ -170,7 +170,7 @@ contract DssProxyActions {
         address manager,
         uint cdp,
         address guy,
-        bool ok
+        uint ok
     ) public {
         ManagerLike(manager).allow(cdp, guy, ok);
     }

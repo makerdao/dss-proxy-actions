@@ -23,7 +23,7 @@ contract ProxyCalls {
         proxy.execute(proxyLib, msg.data);
     }
 
-    function allow(address, uint, address, bool) public {
+    function allow(address, uint, address, uint) public {
         proxy.execute(proxyLib, msg.data);
     }
 
@@ -171,7 +171,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     function testGiveCDPAllowedUser() public {
         uint cdp = this.open(address(manager), "ETH");
         FakeUser user = new FakeUser();
-        this.allow(address(manager), cdp, address(user), true);
+        this.allow(address(manager), cdp, address(user), 1);
         user.doGive(manager, cdp, address(123));
         assertEq(manager.lads(cdp), address(123));
     }
