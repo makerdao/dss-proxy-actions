@@ -292,8 +292,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(dai.balanceOf(address(this)), 0);
         this.draw(address(manager), address(daiJoin), cdp, 300 ether);
         assertEq(dai.balanceOf(address(this)), 300 ether);
-        (, uint art) = vat.urns("ETH", manager.urns(cdp));
-        assertEq(art, 300 ether);
+        assertEq(art("ETH", manager.urns(cdp)), 300 ether);
     }
 
     function testDrawAfterDrip() public {
@@ -305,8 +304,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(dai.balanceOf(address(this)), 0);
         this.draw(address(manager), address(daiJoin), cdp, 300 ether);
         assertEq(dai.balanceOf(address(this)), 300 ether);
-        (, uint art) = vat.urns("ETH", manager.urns(cdp));
-        assertEq(art, mul(300 ether, ONE) / (1.05 * 10 ** 27) + 1); // Extra wei due rounding
+        assertEq(art("ETH", manager.urns(cdp)), mul(300 ether, ONE) / (1.05 * 10 ** 27) + 1); // Extra wei due rounding
     }
 
     function testWipe() public {
@@ -316,8 +314,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         dai.approve(address(proxy), 100 ether);
         this.wipe(address(manager), address(daiJoin), cdp, 100 ether);
         assertEq(dai.balanceOf(address(this)), 200 ether);
-        (, uint art) = vat.urns("ETH", manager.urns(cdp));
-        assertEq(art, 200 ether);
+        assertEq(art("ETH", manager.urns(cdp)), 200 ether);
     }
 
     function testWipeAfterDrip() public {
@@ -330,8 +327,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         dai.approve(address(proxy), 100 ether);
         this.wipe(address(manager), address(daiJoin), cdp, 100 ether);
         assertEq(dai.balanceOf(address(this)), 200 ether);
-        (, uint art) = vat.urns("ETH", manager.urns(cdp));
-        assertEq(art, mul(200 ether, ONE) / (1.05 * 10 ** 27) + 1);
+        assertEq(art("ETH", manager.urns(cdp)), mul(200 ether, ONE) / (1.05 * 10 ** 27) + 1);
     }
 
     function testWipeAllAfterDrip() public {
@@ -343,8 +339,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.draw(address(manager), address(daiJoin), cdp, 300 ether);
         dai.approve(address(proxy), 300 ether);
         this.wipe(address(manager), address(daiJoin), cdp, 300 ether);
-        (, uint art) = vat.urns("ETH", manager.urns(cdp));
-        assertEq(art, 0);
+        assertEq(art("ETH", manager.urns(cdp)), 0);
     }
 
     function testWipeAllAfterDrip2() public {
@@ -359,8 +354,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         }
         dai.approve(address(proxy), 300 ether * times);
         this.wipe(address(manager), address(daiJoin), cdp, 300 ether * times);
-        (, uint art) = vat.urns("ETH", manager.urns(cdp));
-        assertEq(art, 0);
+        assertEq(art("ETH", manager.urns(cdp)), 0);
     }
 
     function testLockETHAndDraw() public {
