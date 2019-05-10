@@ -54,6 +54,7 @@ contract GemJoinLike {
 }
 
 contract DaiJoinLike {
+    function vat() public returns (VatLike);
     function dai() public returns (GemLike);
     function join(address, uint) public payable;
     function exit(address, uint) public;
@@ -62,6 +63,14 @@ contract DaiJoinLike {
 contract HopeLike {
     function hope(address) public;
     function nope(address) public;
+}
+
+contract PotLike {
+    function chi() public view returns (uint);
+    function pie(address) public view returns (uint);
+    function drip() public;
+    function join(uint) public;
+    function exit(uint) public;
 }
 
 contract DssProxyActions {
@@ -370,5 +379,62 @@ contract DssProxyActions {
         daiJoin_join(daiJoin, urn, wadD);
         frob(manager, cdp, address(this), -toInt(wadC), _getWipeDart(ManagerLike(manager).vat(), urn, ManagerLike(manager).ilks(cdp)));
         GemJoinLike(gemJoin).exit(msg.sender, wadC);
+    }
+
+    function dsrJoin(
+        address daiJoin,
+        address pot,
+        uint wad
+    ) public {
+        // Joins wad amount to the vat balance
+        daiJoin_join(daiJoin, address(this), wad);
+
+        // Approves the pot to take out DAI from the proxy's balance in the vat
+        DaiJoinLike(daiJoin).vat().hope(pot);
+
+        // Joins the pie value (equivalent to the DAI wad amount) in the pot
+        PotLike(pot).join(mul(wad, ONE) / PotLike(pot).chi());
+    }
+
+    function dsrExit(
+        address daiJoin,
+        address pot,
+        uint wad
+    ) public {
+        // Drips to count the savings accumulated until this moment
+        PotLike(pot).drip();
+
+        // Calculates the pie value in the pot equivalent to the DAI wad amount
+        uint pie = mul(wad, ONE) / PotLike(pot).chi();
+
+        // Executes the pot exit
+        PotLike(pot).exit(pie);
+
+        // Checks the actual balance of DAI in the vat after the pot exit
+        uint bal = DaiJoinLike(daiJoin).vat().dai(address(this));
+
+        // It is necessary to check if due rounding the exact wad amount can be exited by the adapter.
+        // Otherwise it will do the maximum DAI balance in the vat
+        DaiJoinLike(daiJoin).exit(
+            msg.sender,
+            bal >= mul(wad, ONE) ? wad : bal / ONE
+        );
+    }
+
+    function dsrExitAll(
+        address daiJoin,
+        address pot
+    ) public {
+        // Drips to count the savings accumulated until this moment
+        PotLike(pot).drip();
+
+        // Gets the total pie belonging to the proxy account
+        uint pie = PotLike(pot).pie(address(this));
+
+        // Executes the pot exit
+        PotLike(pot).exit(pie);
+
+        // Exits the DAI amount corresponding to the just pie exited
+        DaiJoinLike(daiJoin).exit(msg.sender, mul(PotLike(pot).chi(), pie) / ONE);
     }
 }
