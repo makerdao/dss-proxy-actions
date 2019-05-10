@@ -507,7 +507,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(pot.pie(address(this)), 0 ether);
         this.dsrJoin(address(daiJoin), address(pot), 50 ether);
         assertEq(dai.balanceOf(address(this)), 0 ether);
-        // Due rounding the DAI equivalent is not the same than initial wad amount:
+        // Due rounding the DAI equivalent is not the same than initial wad amount
         assertEq(pot.pie(address(proxy)) * pot.chi(), 49999999999999999999350000000000000000000000000);
         hevm.warp(initialTime + 1);
         pot.drip();
