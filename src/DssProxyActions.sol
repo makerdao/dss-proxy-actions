@@ -26,6 +26,7 @@ contract GemLike {
 
 contract ManagerLike {
     function ilks(uint) public view returns (bytes32);
+    function lads(uint) public view returns (address);
     function urns(uint) public view returns (address);
     function vat() public view returns (address);
     function open(bytes32) public returns (uint);
@@ -43,6 +44,7 @@ contract VatLike {
     function ilks(bytes32) public view returns (uint, uint, uint, uint, uint);
     function dai(address) public view returns (uint);
     function urns(bytes32, address) public view returns (uint, uint);
+    function frob(bytes32, address, address, address, int, int) public;
     function hope(address) public;
     function move(address, address, uint) public;
 }
@@ -117,13 +119,12 @@ contract DssProxyActions {
 
     function _getWipeDart(
         address vat,
+        uint dai,
         address urn,
         bytes32 ilk
     ) internal view returns (int dart) {
         // Gets actual rate from the vat
         (, uint rate,,,) = VatLike(vat).ilks(ilk);
-        // Gets DAI balance of the urn in the vat
-        uint dai = VatLike(vat).dai(urn);
         // Gets actual art value of the urn
         (, uint art) = VatLike(vat).urns(ilk, urn);
 
@@ -251,9 +252,17 @@ contract DssProxyActions {
         uint cdp
     ) public payable {
         // Receives ETH amount, converts it to WETH and joins it into the vat
-        ethJoin_join(ethJoin, ManagerLike(manager).urns(cdp));
+        ethJoin_join(ethJoin, address(this));
         // Locks WETH amount into the CDP
-        frob(manager, cdp, toInt(msg.value), 0);
+        VatLike(
+            ManagerLike(manager).vat()).frob(
+            "ETH",
+            ManagerLike(manager).urns(cdp),
+            address(this),
+            address(this),
+            toInt(msg.value),
+            0
+        );
     }
 
     function lockGem(
@@ -263,9 +272,16 @@ contract DssProxyActions {
         uint wad
     ) public {
         // Takes token amount from user's wallet and joins into the vat
-        gemJoin_join(gemJoin, ManagerLike(manager).urns(cdp), wad);
+        gemJoin_join(gemJoin, address(this), wad);
         // Locks token amount into the CDP
-        frob(manager, cdp, toInt(wad), 0);
+        VatLike(ManagerLike(manager).vat()).frob(
+            ManagerLike(manager).ilks(cdp),
+            ManagerLike(manager).urns(cdp),
+            address(this),
+            address(this),
+            toInt(wad),
+            0
+        );
     }
 
     function freeETH(
@@ -320,11 +336,27 @@ contract DssProxyActions {
         uint cdp,
         uint wad
     ) public {
+        address vat = ManagerLike(manager).vat();
         address urn = ManagerLike(manager).urns(cdp);
-        // Joins DAI amount into the vat
-        daiJoin_join(daiJoin, urn, wad);
-        // Paybacks debt to the CDP
-        frob(manager, cdp, 0, _getWipeDart(ManagerLike(manager).vat(), urn, ManagerLike(manager).ilks(cdp)));
+        bytes32 ilk = ManagerLike(manager).ilks(cdp);
+        if (ManagerLike(manager).lads(cdp) == address(this)) {
+            // Joins DAI amount into the vat
+            daiJoin_join(daiJoin, urn, wad);
+            // Paybacks debt to the CDP
+            frob(manager, cdp, 0, _getWipeDart(vat, VatLike(vat).dai(urn), urn, ilk));
+        } else {
+            // Joins DAI amount into the vat
+            daiJoin_join(daiJoin, address(this), wad);
+            // Paybacks debt to the CDP
+            VatLike(vat).frob(
+                ilk,
+                urn,
+                address(this),
+                address(this),
+                0,
+                _getWipeDart(vat, wad * ONE, urn, ilk)
+            );
+        }
     }
 
     function lockETHAndDraw(
@@ -405,7 +437,13 @@ contract DssProxyActions {
         // Joins DAI amount into the vat
         daiJoin_join(daiJoin, urn, wadD);
         // Paybacks debt to the CDP and unlocks WETH amount from it
-        frob(manager, cdp, address(this), -toInt(wadC), _getWipeDart(ManagerLike(manager).vat(), urn, ManagerLike(manager).ilks(cdp)));
+        frob(
+            manager,
+            cdp,
+            address(this),
+            -toInt(wadC),
+            _getWipeDart(ManagerLike(manager).vat(), VatLike(ManagerLike(manager).vat()).dai(urn), urn, ManagerLike(manager).ilks(cdp))
+        );
         // Exits WETH amount to proxy address as a token
         GemJoinLike(ethJoin).exit(address(this), wadC);
         // Converts WETH to ETH
@@ -426,7 +464,13 @@ contract DssProxyActions {
         // Joins DAI amount into the vat
         daiJoin_join(daiJoin, urn, wadD);
         // Paybacks debt to the CDP and unlocks token amount from it
-        frob(manager, cdp, address(this), -toInt(wadC), _getWipeDart(ManagerLike(manager).vat(), urn, ManagerLike(manager).ilks(cdp)));
+        frob(
+            manager,
+            cdp,
+            address(this),
+            -toInt(wadC),
+            _getWipeDart(ManagerLike(manager).vat(), VatLike(ManagerLike(manager).vat()).dai(urn), urn, ManagerLike(manager).ilks(cdp))
+        );
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, wadC);
     }

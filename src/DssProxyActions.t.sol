@@ -269,9 +269,30 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(address(this).balance, initialBalance - 2 ether);
     }
 
+    function testLockETHOtherCDPOwner() public {
+        uint initialBalance = address(this).balance;
+        uint cdp = this.open(address(manager), "ETH");
+        this.give(address(manager), cdp, address(123));
+        assertEq(ink("ETH", manager.urns(cdp)), 0);
+        this.lockETH.value(2 ether)(address(manager), address(ethJoin), cdp);
+        assertEq(ink("ETH", manager.urns(cdp)), 2 ether);
+        assertEq(address(this).balance, initialBalance - 2 ether);
+    }
+
     function testLockGem() public {
         col.mint(5 ether);
         uint cdp = this.open(address(manager), "COL");
+        col.approve(address(proxy), 2 ether);
+        assertEq(ink("COL", manager.urns(cdp)), 0);
+        this.lockGem(address(manager), address(colJoin), cdp, 2 ether);
+        assertEq(ink("COL", manager.urns(cdp)), 2 ether);
+        assertEq(col.balanceOf(address(this)), 3 ether);
+    }
+
+    function testLockGemOtherCDPOwner() public {
+        col.mint(5 ether);
+        uint cdp = this.open(address(manager), "COL");
+        this.give(address(manager), cdp, address(123));
         col.approve(address(proxy), 2 ether);
         assertEq(ink("COL", manager.urns(cdp)), 0);
         this.lockGem(address(manager), address(colJoin), cdp, 2 ether);
@@ -324,6 +345,17 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.lockETH.value(2 ether)(address(manager), address(ethJoin), cdp);
         this.draw(address(manager), address(daiJoin), cdp, 300 ether);
         dai.approve(address(proxy), 100 ether);
+        this.wipe(address(manager), address(daiJoin), cdp, 100 ether);
+        assertEq(dai.balanceOf(address(this)), 200 ether);
+        assertEq(art("ETH", manager.urns(cdp)), 200 ether);
+    }
+
+    function testWipeOtherCDPOwner() public {
+        uint cdp = this.open(address(manager), "ETH");
+        this.lockETH.value(2 ether)(address(manager), address(ethJoin), cdp);
+        this.draw(address(manager), address(daiJoin), cdp, 300 ether);
+        dai.approve(address(proxy), 100 ether);
+        this.give(address(manager), cdp, address(123));
         this.wipe(address(manager), address(daiJoin), cdp, 100 ether);
         assertEq(dai.balanceOf(address(this)), 200 ether);
         assertEq(art("ETH", manager.urns(cdp)), 200 ether);
