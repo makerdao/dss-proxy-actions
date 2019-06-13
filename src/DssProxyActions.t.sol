@@ -5,7 +5,7 @@ import "ds-test/test.sol";
 import "./DssProxyActions.sol";
 
 import {DssDeployTestBase} from "dss-deploy/DssDeploy.t.base.sol";
-import {Token5} from "dss-deploy/Token5.sol";
+import {Token5} from "dss-deploy/token5.sol";
 import {GemJoin3} from "dss-deploy/join.sol";
 import {DSValue} from "ds-value/value.sol";
 import {DssCdpManager} from "dss-cdp-manager/DssCdpManager.sol";
