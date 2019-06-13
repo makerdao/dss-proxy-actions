@@ -18,6 +18,7 @@
 pragma solidity >=0.5.0;
 
 contract GemLike {
+    function decimals() public returns (uint256);
     function approve(address, uint) public;
     function transferFrom(address, address, uint) public;
     function deposit() public payable;
@@ -94,7 +95,16 @@ contract DssProxyActions {
     }
 
     function toRad(uint wad) internal pure returns (uint rad) {
-        rad = wad * 10 ** 27;
+        rad = mul(wad, 10 ** 27);
+    }
+
+    function convertTo18(address gemJoin, uint256 amt) internal returns (uint256 wad) {
+        // For those collaterals that have less than 18 decimals precision we need to do the conversion before passing to frob function
+        // Adapters will automatically handle the difference of precision
+        wad = mul(
+            amt,
+            10 ** (18 - GemLike(GemJoinLike(gemJoin).gem()).decimals())
+        );
     }
 
     function _getDrawDart(
@@ -279,7 +289,7 @@ contract DssProxyActions {
             ManagerLike(manager).urns(cdp),
             address(this),
             address(this),
-            toInt(wad),
+            toInt(convertTo18(gemJoin, wad)),
             0
         );
     }
@@ -307,7 +317,7 @@ contract DssProxyActions {
         uint wad
     ) public {
         // Unlocks token amount from the CDP
-        frob(manager, cdp, address(this), -toInt(wad), 0);
+        frob(manager, cdp, address(this), -toInt(convertTo18(gemJoin, wad)), 0);
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, wad);
     }
@@ -404,7 +414,7 @@ contract DssProxyActions {
         // Takes token amount from user's wallet and joins into the vat
         gemJoin_join(gemJoin, urn, wadC);
         // Locks token amount into the CDP and generates debt
-        frob(manager, cdp, toInt(wadC), _getDrawDart(vat, urn, ManagerLike(manager).ilks(cdp), wadD));
+        frob(manager, cdp, toInt(convertTo18(gemJoin, wadC)), _getDrawDart(vat, urn, ManagerLike(manager).ilks(cdp), wadD));
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
         move(manager, cdp, address(this), toRad(wadD));
         // Allows adapter to access to proxy's balance in the vat
@@ -468,7 +478,7 @@ contract DssProxyActions {
             manager,
             cdp,
             address(this),
-            -toInt(wadC),
+            -toInt(convertTo18(gemJoin, wadC)),
             _getWipeDart(ManagerLike(manager).vat(), VatLike(ManagerLike(manager).vat()).dai(urn), urn, ManagerLike(manager).ilks(cdp))
         );
         // Exits token amount to the user's wallet as a token

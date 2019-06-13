@@ -5,6 +5,9 @@ import "ds-test/test.sol";
 import "./DssProxyActions.sol";
 
 import {DssDeployTestBase} from "dss-deploy/DssDeploy.t.base.sol";
+import {Token5} from "dss-deploy/Token5.sol";
+import {GemJoin3} from "dss-deploy/join.sol";
+import {DSValue} from "ds-value/value.sol";
 import {DssCdpManager} from "dss-cdp-manager/DssCdpManager.sol";
 import {DSProxyFactory, DSProxy} from "ds-proxy/proxy.sol";
 
@@ -151,9 +154,26 @@ contract FakeUser {
 contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     DssCdpManager manager;
 
+    GemJoin3 col5Join;
+    Token5 col5;
+    DSValue pipCOL5;
+
     function setUp() public {
         super.setUp();
-        deploy();
+        deployKeepAuth();
+
+        // Add a token collateral
+        col5 = new Token5(1000 * 10 ** 9);
+        col5Join = new GemJoin3(address(vat), "COL5", address(col5));
+        pipCOL5 = new DSValue();
+        dssDeploy.deployCollateral("COL5", address(col5Join), address(pipCOL5));
+        pipCOL5.poke(bytes32(uint(50 ether))); // Price 50 DAI = 1 COL5 (in precision 18)
+        this.file(address(spotter), "COL5", "mat", uint(1500000000 ether)); // Liquidation ratio 150%
+        this.file(address(vat), bytes32("COL5"), bytes32("line"), uint(10000 * 10 ** 45));
+        spotter.poke("COL5");
+        (,,uint spot,,) = vat.ilks("COL5");
+        assertEq(spot, 50 * ONE * ONE / 1500000000 ether);
+
         manager = new DssCdpManager(address(vat));
         DSProxyFactory factory = new DSProxyFactory();
         proxyLib = address(new DssProxyActions());
@@ -289,6 +309,16 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(col.balanceOf(address(this)), 3 ether);
     }
 
+    function testLockGemCol5() public {
+        uint cdp = this.open(address(manager), "COL5");
+        col5.approve(address(proxy), 2 * 10 ** 9);
+        assertEq(ink("COL5", manager.urns(cdp)), 0);
+        uint prevBalance = col5.balanceOf(address(this));
+        this.lockGem(address(manager), address(col5Join), cdp, 2 * 10 ** 9);
+        assertEq(ink("COL5", manager.urns(cdp)),  2 ether);
+        assertEq(col5.balanceOf(address(this)), prevBalance - 2 * 10 ** 9);
+    }
+
     function testLockGemOtherCDPOwner() public {
         col.mint(5 ether);
         uint cdp = this.open(address(manager), "COL");
@@ -300,7 +330,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(col.balanceOf(address(this)), 3 ether);
     }
 
-    function testfreeETH() public {
+    function testFreeETH() public {
         uint initialBalance = address(this).balance;
         uint cdp = this.open(address(manager), "ETH");
         this.lockETH.value(2 ether)(address(manager), address(ethJoin), cdp);
@@ -309,7 +339,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(address(this).balance, initialBalance - 1 ether);
     }
 
-    function testfreeGem() public {
+    function testFreeGem() public {
         col.mint(5 ether);
         uint cdp = this.open(address(manager), "COL");
         col.approve(address(proxy), 2 ether);
@@ -317,6 +347,17 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.freeGem(address(manager), address(colJoin), cdp, 1 ether);
         assertEq(ink("COL", manager.urns(cdp)), 1 ether);
         assertEq(col.balanceOf(address(this)), 4 ether);
+    }
+
+    function testFreeGemCol5() public {
+        uint cdp = this.open(address(manager), "COL5");
+        col5.approve(address(proxy), 2 * 10 ** 9);
+        assertEq(ink("COL5", manager.urns(cdp)), 0);
+        uint prevBalance = col5.balanceOf(address(this));
+        this.lockGem(address(manager), address(col5Join), cdp, 2 * 10 ** 9);
+        this.freeGem(address(manager), address(col5Join), cdp, 1 * 10 ** 9);
+        assertEq(ink("COL5", manager.urns(cdp)),  1 ether);
+        assertEq(col5.balanceOf(address(this)), prevBalance - 1 * 10 ** 9);
     }
 
     function testDraw() public {
@@ -433,6 +474,17 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(col.balanceOf(address(this)), 3 ether);
     }
 
+    function testLockGemCol5AndDraw() public {
+        uint cdp = this.open(address(manager), "COL5");
+        col5.approve(address(proxy), 3 * 10 ** 9);
+        assertEq(ink("COL5", manager.urns(cdp)), 0);
+        uint prevBalance = col5.balanceOf(address(this));
+        this.lockGemAndDraw(address(manager), address(col5Join), address(daiJoin), cdp, 3 * 10 ** 9, 50 ether);
+        assertEq(ink("COL5", manager.urns(cdp)), 3 ether);
+        assertEq(dai.balanceOf(address(this)), 50 ether);
+        assertEq(col5.balanceOf(address(this)), prevBalance - 3 * 10 ** 9);
+    }
+
     function testOpenLockGemAndDraw() public {
         col.mint(5 ether);
         col.approve(address(proxy), 2 ether);
@@ -464,6 +516,19 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(ink("COL", manager.urns(cdp)), 0.5 ether);
         assertEq(dai.balanceOf(address(this)), 2 ether);
         assertEq(col.balanceOf(address(this)), 4.5 ether);
+    }
+
+    function testWipeAndFreeGemCol5AndDraw() public {
+        uint cdp = this.open(address(manager), "COL5");
+        col5.approve(address(proxy), 3 * 10 ** 9);
+        assertEq(ink("COL5", manager.urns(cdp)), 0);
+        uint prevBalance = col5.balanceOf(address(this));
+        this.lockGemAndDraw(address(manager), address(col5Join), address(daiJoin), cdp, 3 * 10 ** 9, 50 ether);
+        dai.approve(address(proxy), 25 ether);
+        this.wipeAndFreeGem(address(manager), address(col5Join), address(daiJoin), cdp, 1 * 10 ** 9, 25 ether);
+        assertEq(ink("COL5", manager.urns(cdp)), 2 ether);
+        assertEq(dai.balanceOf(address(this)), 25 ether);
+        assertEq(col5.balanceOf(address(this)), prevBalance - 2 * 10 ** 9);
     }
 
     function testPreventHigherDaiOnWipe() public {
