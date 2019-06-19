@@ -264,9 +264,8 @@ contract DssProxyActions {
         // Receives ETH amount, converts it to WETH and joins it into the vat
         ethJoin_join(ethJoin, address(this));
         // Locks WETH amount into the CDP
-        VatLike(
-            ManagerLike(manager).vat()).frob(
-            "ETH",
+        VatLike(ManagerLike(manager).vat()).frob(
+            ManagerLike(manager).ilks(cdp),
             ManagerLike(manager).urns(cdp),
             address(this),
             address(this),
