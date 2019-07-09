@@ -10,7 +10,7 @@ contract GemLike {
 
 contract ManagerLike {
     function ilks(uint) public view returns (bytes32);
-    function lads(uint) public view returns (address);
+    function owns(uint) public view returns (address);
     function urns(uint) public view returns (address);
     function vat() public view returns (address);
     function open(bytes32) public returns (uint);
@@ -331,7 +331,7 @@ contract DssProxyActions {
         address vat = ManagerLike(manager).vat();
         address urn = ManagerLike(manager).urns(cdp);
         bytes32 ilk = ManagerLike(manager).ilks(cdp);
-        if (ManagerLike(manager).lads(cdp) == address(this)) {
+        if (ManagerLike(manager).owns(cdp) == address(this)) {
             // Joins DAI amount into the vat
             daiJoin_join(daiJoin, urn, wad);
             // Paybacks debt to the CDP

@@ -191,13 +191,13 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     function testCreateCDP() public {
         uint cdp = this.open(address(manager), "ETH");
         assertEq(cdp, 1);
-        assertEq(manager.lads(cdp), address(proxy));
+        assertEq(manager.owns(cdp), address(proxy));
     }
 
     function testGiveCDP() public {
         uint cdp = this.open(address(manager), "ETH");
         this.give(address(manager), cdp, address(123));
-        assertEq(manager.lads(cdp), address(123));
+        assertEq(manager.owns(cdp), address(123));
     }
 
     function testGiveCDPAllowedUser() public {
@@ -205,7 +205,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         FakeUser user = new FakeUser();
         this.allow(address(manager), cdp, address(user), 1);
         user.doGive(manager, cdp, address(123));
-        assertEq(manager.lads(cdp), address(123));
+        assertEq(manager.owns(cdp), address(123));
     }
 
     function testFlux() public {
