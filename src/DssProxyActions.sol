@@ -37,6 +37,7 @@ contract GemJoinLike {
     function gem() public returns (GemLike);
     function join(address, uint) public payable;
     function exit(address, uint) public;
+    function make(address) public returns (address);
 }
 
 contract DaiJoinLike {
@@ -138,11 +139,14 @@ contract DssProxyActions {
         GemJoinLike(apt).join(urn, msg.value);
     }
 
-    function gemJoin_join(address apt, address urn, uint wad) public payable {
-        // Gets token from the user's wallet
-        GemJoinLike(apt).gem().transferFrom(msg.sender, address(this), wad);
-        // Approves adapter to take the token amount
-        GemJoinLike(apt).gem().approve(apt, wad);
+    function gemJoin_join(address apt, address urn, uint wad, bool transferFrom) public payable {
+        // Only executes for tokens that have approval/transferFrom implementation
+        if (transferFrom) {
+            // Gets token from the user's wallet
+            GemJoinLike(apt).gem().transferFrom(msg.sender, address(this), wad);
+            // Approves adapter to take the token amount
+            GemJoinLike(apt).gem().approve(apt, wad);
+        }
         // Joins token collateral into the vat
         GemJoinLike(apt).join(urn, wad);
     }
@@ -239,6 +243,12 @@ contract DssProxyActions {
         ManagerLike(manager).quit(cdp, dst);
     }
 
+    function makeGemBag(
+        address gemJoin
+    ) public returns (address bag) {
+        bag = GemJoinLike(gemJoin).make(address(this));
+    }
+
     function lockETH(
         address manager,
         address ethJoin,
@@ -261,10 +271,11 @@ contract DssProxyActions {
         address manager,
         address gemJoin,
         uint cdp,
-        uint wad
+        uint wad,
+        bool transferFrom
     ) public {
         // Takes token amount from user's wallet and joins into the vat
-        gemJoin_join(gemJoin, address(this), wad);
+        gemJoin_join(gemJoin, address(this), wad, transferFrom);
         // Locks token amount into the CDP
         VatLike(ManagerLike(manager).vat()).frob(
             ManagerLike(manager).ilks(cdp),
@@ -274,6 +285,15 @@ contract DssProxyActions {
             toInt(convertTo18(gemJoin, wad)),
             0
         );
+    }
+
+    function lockGem(
+        address manager,
+        address gemJoin,
+        uint cdp,
+        uint wad
+    ) public {
+        lockGem(manager, gemJoin, cdp, wad, true);
     }
 
     function freeETH(
@@ -389,12 +409,13 @@ contract DssProxyActions {
         address daiJoin,
         uint cdp,
         uint wadC,
-        uint wadD
+        uint wadD,
+        bool transferFrom
     ) public{
         address urn = ManagerLike(manager).urns(cdp);
         address vat = ManagerLike(manager).vat();
         // Takes token amount from user's wallet and joins into the vat
-        gemJoin_join(gemJoin, urn, wadC);
+        gemJoin_join(gemJoin, urn, wadC, transferFrom);
         // Locks token amount into the CDP and generates debt
         frob(manager, cdp, toInt(convertTo18(gemJoin, wadC)), _getDrawDart(vat, urn, ManagerLike(manager).ilks(cdp), wadD));
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
@@ -405,6 +426,30 @@ contract DssProxyActions {
         DaiJoinLike(daiJoin).exit(msg.sender, wadD);
     }
 
+    function lockGemAndDraw(
+        address manager,
+        address gemJoin,
+        address daiJoin,
+        uint cdp,
+        uint wadC,
+        uint wadD
+    ) public{
+       lockGemAndDraw(manager, gemJoin, daiJoin, cdp, wadC, wadD, true);
+    }
+
+    function openLockGemAndDraw(
+        address manager,
+        address gemJoin,
+        address daiJoin,
+        bytes32 ilk,
+        uint wadC,
+        uint wadD,
+        bool transferFrom
+    ) public returns (uint cdp) {
+        cdp = ManagerLike(manager).open(ilk);
+        lockGemAndDraw(manager, gemJoin, daiJoin, cdp, wadC, wadD, transferFrom);
+    }
+
     function openLockGemAndDraw(
         address manager,
         address gemJoin,
@@ -413,8 +458,7 @@ contract DssProxyActions {
         uint wadC,
         uint wadD
     ) public returns (uint cdp) {
-        cdp = ManagerLike(manager).open(ilk);
-        lockGemAndDraw(manager, gemJoin, daiJoin, cdp, wadC, wadD);
+        cdp = openLockGemAndDraw(manager, gemJoin, daiJoin, ilk, wadC, wadD, true);
     }
 
     function wipeAndFreeETH(

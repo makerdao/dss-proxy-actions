@@ -5,8 +5,8 @@ import "ds-test/test.sol";
 import "./DssProxyActions.sol";
 
 import {DssDeployTestBase} from "dss-deploy/DssDeploy.t.base.sol";
-import {DGD} from "dss-deploy/tokens.sol";
-import {GemJoin3} from "dss-deploy/join.sol";
+import {DGD, GNT} from "dss-deploy/tokens.sol";
+import {GemJoin3, GemJoin4} from "dss-deploy/join.sol";
 import {DSValue} from "ds-value/value.sol";
 import {DssCdpManager} from "dss-cdp-manager/DssCdpManager.sol";
 import {DSProxyFactory, DSProxy} from "ds-proxy/proxy.sol";
@@ -63,8 +63,33 @@ contract ProxyCalls {
         require(success, "");
     }
 
+    function lockGem(address, address, uint, uint, bool) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
     function lockGem(address, address, uint, uint) public {
         proxy.execute(proxyLib, msg.data);
+    }
+
+    function makeGemBag(address) public returns (address bag) {
+        address payable target = address(proxy);
+        bytes memory data = abi.encodeWithSignature("execute(address,bytes)", proxyLib, msg.data);
+        assembly {
+            let succeeded := call(sub(gas, 5000), target, callvalue, add(data, 0x20), mload(data), 0, 0)
+            let size := returndatasize
+            let response := mload(0x40)
+            mstore(0x40, add(response, and(add(add(size, 0x20), 0x1f), not(0x1f))))
+            mstore(response, size)
+            returndatacopy(add(response, 0x20), 0, size)
+
+            bag := mload(add(response, 0x60))
+
+            switch iszero(succeeded)
+            case 1 {
+                // throw if delegatecall failed
+                revert(add(response, 0x20), size)
+            }
+        }
     }
 
     function freeETH(address, address, uint, uint) public {
@@ -109,8 +134,19 @@ contract ProxyCalls {
         }
     }
 
+    function lockGemAndDraw(address, address, address, uint, uint, uint, bool) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
     function lockGemAndDraw(address, address, address, uint, uint, uint) public {
         proxy.execute(proxyLib, msg.data);
+    }
+
+    function openLockGemAndDraw(address, address, address, bytes32, uint, uint, bool) public returns (uint cdp) {
+        bytes memory response = proxy.execute(proxyLib, msg.data);
+        assembly {
+            cdp := mload(add(response, 0x20))
+        }
     }
 
     function openLockGemAndDraw(address, address, address, bytes32, uint, uint) public returns (uint cdp) {
@@ -157,6 +193,9 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     GemJoin3 dgdJoin;
     DGD dgd;
     DSValue pipDGD;
+    GemJoin4 gntJoin;
+    GNT gnt;
+    DSValue pipGNT;
 
     function setUp() public {
         super.setUp();
@@ -173,6 +212,17 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         spotter.poke("DGD");
         (,,uint spot,,) = vat.ilks("DGD");
         assertEq(spot, 50 * ONE * ONE / 1500000000 ether);
+
+        gnt = new GNT(1000000 ether);
+        gntJoin = new GemJoin4(address(vat), "GNT", address(gnt));
+        pipGNT = new DSValue();
+        dssDeploy.deployCollateral("GNT", address(gntJoin), address(pipGNT));
+        pipGNT.poke(bytes32(uint(100 ether))); // Price 100 DAI = 1 GNT
+        this.file(address(spotter), "GNT", "mat", uint(1500000000 ether)); // Liquidation ratio 150%
+        this.file(address(vat), bytes32("GNT"), bytes32("line"), uint(10000 * 10 ** 45));
+        spotter.poke("GNT");
+        (,, spot,,) = vat.ilks("GNT");
+        assertEq(spot, 100 * ONE * ONE / 1500000000 ether);
 
         manager = new DssCdpManager(address(vat));
         DSProxyFactory factory = new DSProxyFactory();
@@ -319,6 +369,20 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(dgd.balanceOf(address(this)), prevBalance - 2 * 10 ** 9);
     }
 
+    function testLockGemGNT() public {
+        uint cdp = this.open(address(manager), "GNT");
+        assertEq(ink("GNT", manager.urns(cdp)), 0);
+        uint prevBalance = gnt.balanceOf(address(this));
+        address bag = this.makeGemBag(address(gntJoin));
+        assertEq(gnt.balanceOf(bag), 0);
+        gnt.transfer(bag, 2 ether);
+        assertEq(gnt.balanceOf(address(this)), prevBalance - 2 ether);
+        assertEq(gnt.balanceOf(bag), 2 ether);
+        this.lockGem(address(manager), address(gntJoin), cdp, 2 ether, false);
+        assertEq(ink("GNT", manager.urns(cdp)),  2 ether);
+        assertEq(gnt.balanceOf(bag), 0);
+    }
+
     function testLockGemOtherCDPOwner() public {
         col.mint(5 ether);
         uint cdp = this.open(address(manager), "COL");
@@ -358,6 +422,18 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.freeGem(address(manager), address(dgdJoin), cdp, 1 * 10 ** 9);
         assertEq(ink("DGD", manager.urns(cdp)),  1 ether);
         assertEq(dgd.balanceOf(address(this)), prevBalance - 1 * 10 ** 9);
+    }
+
+    function testFreeGemGNT() public {
+        uint cdp = this.open(address(manager), "GNT");
+        assertEq(ink("GNT", manager.urns(cdp)), 0);
+        uint prevBalance = gnt.balanceOf(address(this));
+        address bag = this.makeGemBag(address(gntJoin));
+        gnt.transfer(bag, 2 ether);
+        this.lockGem(address(manager), address(gntJoin), cdp, 2 ether, false);
+        this.freeGem(address(manager), address(gntJoin), cdp, 1 ether);
+        assertEq(ink("GNT", manager.urns(cdp)),  1 ether);
+        assertEq(gnt.balanceOf(address(this)), prevBalance - 1 ether);
     }
 
     function testDraw() public {
@@ -485,6 +561,18 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(dgd.balanceOf(address(this)), prevBalance - 3 * 10 ** 9);
     }
 
+    function testLockGemGNTAndDraw() public {
+        uint cdp = this.open(address(manager), "GNT");
+        assertEq(ink("GNT", manager.urns(cdp)), 0);
+        uint prevBalance = gnt.balanceOf(address(this));
+        address bag = this.makeGemBag(address(gntJoin));
+        gnt.transfer(bag, 3 ether);
+        this.lockGemAndDraw(address(manager), address(gntJoin), address(daiJoin), cdp, 3 ether, 50 ether, false);
+        assertEq(ink("GNT", manager.urns(cdp)), 3 ether);
+        assertEq(dai.balanceOf(address(this)), 50 ether);
+        assertEq(gnt.balanceOf(address(this)), prevBalance - 3 ether);
+    }
+
     function testOpenLockGemAndDraw() public {
         col.mint(5 ether);
         col.approve(address(proxy), 2 ether);
@@ -493,6 +581,15 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(ink("COL", manager.urns(cdp)), 2 ether);
         assertEq(dai.balanceOf(address(this)), 10 ether);
         assertEq(col.balanceOf(address(this)), 3 ether);
+    }
+
+    function testOpenLockGemGNTAndDraw() public {
+        assertEq(dai.balanceOf(address(this)), 0);
+        address bag = this.makeGemBag(address(gntJoin));
+        gnt.transfer(bag, 2 ether);
+        uint cdp = this.openLockGemAndDraw(address(manager), address(gntJoin), address(daiJoin), "GNT", 2 ether, 10 ether, false);
+        assertEq(ink("GNT", manager.urns(cdp)), 2 ether);
+        assertEq(dai.balanceOf(address(this)), 10 ether);
     }
 
     function testWipeAndFreeETH() public {
