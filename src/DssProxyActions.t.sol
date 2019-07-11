@@ -203,7 +203,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
 
         // Add a token collateral
         dgd = new DGD(1000 * 10 ** 9);
-        dgdJoin = new GemJoin3(address(vat), "DGD", address(dgd));
+        dgdJoin = new GemJoin3(address(vat), "DGD", address(dgd), 9);
         pipDGD = new DSValue();
         dssDeploy.deployCollateral("DGD", address(dgdJoin), address(pipDGD));
         pipDGD.poke(bytes32(uint(50 ether))); // Price 50 DAI = 1 DGD (in precision 18)

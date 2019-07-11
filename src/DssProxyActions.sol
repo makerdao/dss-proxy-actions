@@ -1,7 +1,6 @@
 pragma solidity >=0.5.0;
 
 contract GemLike {
-    function decimals() public returns (uint256);
     function approve(address, uint) public;
     function transferFrom(address, address, uint) public;
     function deposit() public payable;
@@ -34,6 +33,7 @@ contract VatLike {
 }
 
 contract GemJoinLike {
+    function dec() public returns (uint);
     function gem() public returns (GemLike);
     function join(address, uint) public payable;
     function exit(address, uint) public;
@@ -87,7 +87,7 @@ contract DssProxyActions {
         // Adapters will automatically handle the difference of precision
         wad = mul(
             amt,
-            10 ** (18 - GemLike(GemJoinLike(gemJoin).gem()).decimals())
+            10 ** (18 - GemJoinLike(gemJoin).dec())
         );
     }
 
