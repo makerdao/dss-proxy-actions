@@ -9,6 +9,7 @@ import {DGD, GNT} from "dss-deploy/tokens.sol";
 import {GemJoin3, GemJoin4} from "dss-deploy/join.sol";
 import {DSValue} from "ds-value/value.sol";
 import {DssCdpManager} from "dss-cdp-manager/DssCdpManager.sol";
+import {GetCdps} from "dss-cdp-manager/GetCdps.sol";
 import {DSProxyFactory, DSProxy} from "ds-proxy/proxy.sol";
 
 contract ProxyCalls {
