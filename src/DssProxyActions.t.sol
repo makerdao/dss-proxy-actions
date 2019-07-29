@@ -114,6 +114,10 @@ contract ProxyCalls {
         proxy.execute(proxyLib, msg.data);
     }
 
+    function safeWipe(address, address, uint, uint) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
     function lockETHAndDraw(address, address, address, uint, uint) public payable {
         (bool success,) = address(proxy).call.value(msg.value)(abi.encodeWithSignature("execute(address,bytes)", proxyLib, msg.data));
         require(success, "");
@@ -510,6 +514,16 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(art("ETH", manager.urns(cdp)), 200 ether);
     }
 
+    function testSafeWipe() public {
+        uint cdp = this.open(address(manager), "ETH");
+        this.lockETH.value(2 ether)(address(manager), address(ethJoin), cdp);
+        this.draw(address(manager), address(daiJoin), cdp, 300 ether);
+        dai.approve(address(proxy), 100 ether);
+        this.safeWipe(address(manager), address(daiJoin), cdp, 100 ether);
+        assertEq(dai.balanceOf(address(this)), 200 ether);
+        assertEq(art("ETH", manager.urns(cdp)), 200 ether);
+    }
+
     function testWipeOtherCDPOwner() public {
         uint cdp = this.open(address(manager), "ETH");
         this.lockETH.value(2 ether)(address(manager), address(ethJoin), cdp);
@@ -519,6 +533,15 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.wipe(address(manager), address(daiJoin), cdp, 100 ether);
         assertEq(dai.balanceOf(address(this)), 200 ether);
         assertEq(art("ETH", manager.urns(cdp)), 200 ether);
+    }
+
+    function testFailSafeWipeOtherCDPOwner() public {
+        uint cdp = this.open(address(manager), "ETH");
+        this.lockETH.value(2 ether)(address(manager), address(ethJoin), cdp);
+        this.draw(address(manager), address(daiJoin), cdp, 300 ether);
+        dai.approve(address(proxy), 100 ether);
+        this.give(address(manager), cdp, address(123));
+        this.safeWipe(address(manager), address(daiJoin), cdp, 100 ether);
     }
 
     function testWipeAfterDrip() public {

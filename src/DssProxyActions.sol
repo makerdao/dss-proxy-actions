@@ -387,6 +387,16 @@ contract DssProxyActions {
         }
     }
 
+    function safeWipe(
+        address manager,
+        address daiJoin,
+        uint cdp,
+        uint wad
+    ) public {
+        require(ManagerLike(manager).owns(cdp) == address(this), "cdp-not-owned");
+        wipe(manager, daiJoin, cdp, wad);
+    }
+
     function lockETHAndDraw(
         address manager,
         address ethJoin,
