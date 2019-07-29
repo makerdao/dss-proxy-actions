@@ -38,6 +38,10 @@ contract GemJoinLike {
     function gem() public returns (GemLike);
     function join(address, uint) public payable;
     function exit(address, uint) public;
+}
+
+contract GNTJoinLike {
+    function bags(address) public view returns (address);
     function make(address) public returns (address);
 }
 
@@ -247,7 +251,7 @@ contract DssProxyActions {
     function makeGemBag(
         address gemJoin
     ) public returns (address bag) {
-        bag = GemJoinLike(gemJoin).make(address(this));
+        bag = GNTJoinLike(gemJoin).make(address(this));
     }
 
     function lockETH(
@@ -464,17 +468,20 @@ contract DssProxyActions {
 
     function openLockGNTAndDraw(
         address manager,
-        address gemJoin,
+        address gntJoin,
         address daiJoin,
         bytes32 ilk,
         uint wadC,
         uint wadD
     ) public returns (address bag, uint cdp) {
-        // Creates bag to hold GNT
-        bag = makeGemBag(gemJoin);
+        // Creates bag (if doesn't exist) to hold GNT
+        bag = GNTJoinLike(gntJoin).bags(address(this));
+        if (bag == address(0)) {
+            bag = makeGemBag(gntJoin);
+        }
         // Transfer funds to the funds which previously were sent to the proxy
-        GemLike(GemJoinLike(gemJoin).gem()).transfer(bag, wadC);
-        cdp = openLockGemAndDraw(manager, gemJoin, daiJoin, ilk, wadC, wadD, false);
+        GemLike(GemJoinLike(gntJoin).gem()).transfer(bag, wadC);
+        cdp = openLockGemAndDraw(manager, gntJoin, daiJoin, ilk, wadC, wadD, false);
     }
 
     function wipeAndFreeETH(

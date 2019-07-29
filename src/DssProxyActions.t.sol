@@ -636,13 +636,25 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(dai.balanceOf(address(this)), 10 ether);
     }
 
-    function testOpenLockGemGNTAndDraw2() public {
+    function testOpenLockGemGNTAndDrawSafe() public {
         assertEq(dai.balanceOf(address(this)), 0);
         gnt.transfer(address(proxy), 2 ether);
         (address bag, uint cdp) = this.openLockGNTAndDraw(address(manager), address(gntJoin), address(daiJoin), "GNT", 2 ether, 10 ether);
         assertEq(address(bag), gntJoin.bags(address(proxy)));
         assertEq(ink("GNT", manager.urns(cdp)), 2 ether);
         assertEq(dai.balanceOf(address(this)), 10 ether);
+    }
+
+    function testOpenLockGemGNTAndDrawSafeTwice() public {
+        assertEq(dai.balanceOf(address(this)), 0);
+        gnt.transfer(address(proxy), 4 ether);
+        (address bag, uint cdp) = this.openLockGNTAndDraw(address(manager), address(gntJoin), address(daiJoin), "GNT", 2 ether, 10 ether);
+        (address bag2, uint cdp2) = this.openLockGNTAndDraw(address(manager), address(gntJoin), address(daiJoin), "GNT", 2 ether, 10 ether);
+        assertEq(address(bag), gntJoin.bags(address(proxy)));
+        assertEq(address(bag), address(bag2));
+        assertEq(ink("GNT", manager.urns(cdp)), 2 ether);
+        assertEq(ink("GNT", manager.urns(cdp2)), 2 ether);
+        assertEq(dai.balanceOf(address(this)), 20 ether);
     }
 
     function testWipeAndFreeETH() public {
