@@ -2,6 +2,7 @@ pragma solidity >=0.5.0;
 
 contract GemLike {
     function approve(address, uint) public;
+    function transfer(address, uint) public;
     function transferFrom(address, address, uint) public;
     function deposit() public payable;
     function withdraw(uint) public;
@@ -267,6 +268,15 @@ contract DssProxyActions {
         );
     }
 
+    function safeLockETH(
+        address manager,
+        address ethJoin,
+        uint cdp
+    ) public payable {
+        require(ManagerLike(manager).owns(cdp) == address(this), "cdp-not-owned");
+        lockETH(manager, ethJoin, cdp);
+    }
+
     function lockGem(
         address manager,
         address gemJoin,
@@ -287,13 +297,15 @@ contract DssProxyActions {
         );
     }
 
-    function lockGem(
+    function safeLockGem(
         address manager,
         address gemJoin,
         uint cdp,
-        uint wad
-    ) public {
-        lockGem(manager, gemJoin, cdp, wad, true);
+        uint wad,
+        bool transferFrom
+    ) public payable {
+        require(ManagerLike(manager).owns(cdp) == address(this), "cdp-not-owned");
+        lockGem(manager, gemJoin, cdp, wad, transferFrom);
     }
 
     function freeETH(
@@ -426,17 +438,6 @@ contract DssProxyActions {
         DaiJoinLike(daiJoin).exit(msg.sender, wadD);
     }
 
-    function lockGemAndDraw(
-        address manager,
-        address gemJoin,
-        address daiJoin,
-        uint cdp,
-        uint wadC,
-        uint wadD
-    ) public{
-       lockGemAndDraw(manager, gemJoin, daiJoin, cdp, wadC, wadD, true);
-    }
-
     function openLockGemAndDraw(
         address manager,
         address gemJoin,
@@ -459,6 +460,21 @@ contract DssProxyActions {
         uint wadD
     ) public returns (uint cdp) {
         cdp = openLockGemAndDraw(manager, gemJoin, daiJoin, ilk, wadC, wadD, true);
+    }
+
+    function openLockGNTAndDraw(
+        address manager,
+        address gemJoin,
+        address daiJoin,
+        bytes32 ilk,
+        uint wadC,
+        uint wadD
+    ) public returns (address bag, uint cdp) {
+        // Creates bag to hold GNT
+        bag = makeGemBag(gemJoin);
+        // Transfer funds to the funds which previously were sent to the proxy
+        GemLike(GemJoinLike(gemJoin).gem()).transfer(bag, wadC);
+        cdp = openLockGemAndDraw(manager, gemJoin, daiJoin, ilk, wadC, wadD, false);
     }
 
     function wipeAndFreeETH(
