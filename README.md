@@ -54,3 +54,5 @@ https://github.com/makerdao/dss-proxy-actions
 `dsrExit(address daiJoin, address pot, uint wad)`: retrieves `wad` amount of DAI from `pot` and exits DAI token from `daiJoin` adapter (minting it).
 
 `dsrExitAll(address daiJoin, address pot)`: same than `dsrExit` but all the available amount.
+
+`openLockGNTAndDraw(address manager, address jug, address gntJoin, address daiJoin, bytes32 ilk, uint wadC, uint wadD)`: like `openLockGemAndDraw` but specially for GNT token.
