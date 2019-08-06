@@ -57,6 +57,10 @@ contract HopeLike {
     function nope(address) public;
 }
 
+contract JugLike {
+    function drip(bytes32) public;
+}
+
 contract PotLike {
     function chi() public view returns (uint);
     function pie(address) public view returns (uint);
@@ -346,14 +350,18 @@ contract DssProxyActions {
 
     function draw(
         address manager,
+        address jug,
         address daiJoin,
         uint cdp,
         uint wad
     ) public {
         address urn = ManagerLike(manager).urns(cdp);
         address vat = ManagerLike(manager).vat();
+        bytes32 ilk = ManagerLike(manager).ilks(cdp);
+        // Updates stability fee rate before generating new debt
+        JugLike(jug).drip(ilk);
         // Generates debt in the CDP
-        frob(manager, cdp, 0, _getDrawDart(vat, urn, ManagerLike(manager).ilks(cdp), wad));
+        frob(manager, cdp, 0, _getDrawDart(vat, urn, ilk, wad));
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
         move(manager, cdp, address(this), toRad(wad));
         // Allows adapter to access to proxy's balance in the vat
@@ -403,6 +411,7 @@ contract DssProxyActions {
 
     function lockETHAndDraw(
         address manager,
+        address jug,
         address ethJoin,
         address daiJoin,
         uint cdp,
@@ -410,10 +419,13 @@ contract DssProxyActions {
     ) public payable {
         address urn = ManagerLike(manager).urns(cdp);
         address vat = ManagerLike(manager).vat();
+        bytes32 ilk = ManagerLike(manager).ilks(cdp);
+        // Updates stability fee rate before generating new debt
+        JugLike(jug).drip(ilk);
         // Receives ETH amount, converts it to WETH and joins it into the vat
         ethJoin_join(ethJoin, urn);
         // Locks WETH amount into the CDP and generates debt
-        frob(manager, cdp, toInt(msg.value), _getDrawDart(vat, urn, ManagerLike(manager).ilks(cdp), wadD));
+        frob(manager, cdp, toInt(msg.value), _getDrawDart(vat, urn, ilk, wadD));
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
         move(manager, cdp, address(this), toRad(wadD));
         // Allows adapter to access to proxy's balance in the vat
@@ -424,17 +436,19 @@ contract DssProxyActions {
 
     function openLockETHAndDraw(
         address manager,
+        address jug,
         address ethJoin,
         address daiJoin,
         bytes32 ilk,
         uint wadD
     ) public payable returns (uint cdp) {
         cdp = ManagerLike(manager).open(ilk);
-        lockETHAndDraw(manager, ethJoin, daiJoin, cdp, wadD);
+        lockETHAndDraw(manager, jug, ethJoin, daiJoin, cdp, wadD);
     }
 
     function lockGemAndDraw(
         address manager,
+        address jug,
         address gemJoin,
         address daiJoin,
         uint cdp,
@@ -444,10 +458,13 @@ contract DssProxyActions {
     ) public{
         address urn = ManagerLike(manager).urns(cdp);
         address vat = ManagerLike(manager).vat();
+        bytes32 ilk = ManagerLike(manager).ilks(cdp);
+        // Updates stability fee rate before generating new debt
+        JugLike(jug).drip(ilk);
         // Takes token amount from user's wallet and joins into the vat
         gemJoin_join(gemJoin, urn, wadC, transferFrom);
         // Locks token amount into the CDP and generates debt
-        frob(manager, cdp, toInt(convertTo18(gemJoin, wadC)), _getDrawDart(vat, urn, ManagerLike(manager).ilks(cdp), wadD));
+        frob(manager, cdp, toInt(convertTo18(gemJoin, wadC)), _getDrawDart(vat, urn, ilk, wadD));
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
         move(manager, cdp, address(this), toRad(wadD));
         // Allows adapter to access to proxy's balance in the vat
@@ -458,6 +475,7 @@ contract DssProxyActions {
 
     function openLockGemAndDraw(
         address manager,
+        address jug,
         address gemJoin,
         address daiJoin,
         bytes32 ilk,
@@ -466,22 +484,12 @@ contract DssProxyActions {
         bool transferFrom
     ) public returns (uint cdp) {
         cdp = ManagerLike(manager).open(ilk);
-        lockGemAndDraw(manager, gemJoin, daiJoin, cdp, wadC, wadD, transferFrom);
-    }
-
-    function openLockGemAndDraw(
-        address manager,
-        address gemJoin,
-        address daiJoin,
-        bytes32 ilk,
-        uint wadC,
-        uint wadD
-    ) public returns (uint cdp) {
-        cdp = openLockGemAndDraw(manager, gemJoin, daiJoin, ilk, wadC, wadD, true);
+        lockGemAndDraw(manager, jug, gemJoin, daiJoin, cdp, wadC, wadD, transferFrom);
     }
 
     function openLockGNTAndDraw(
         address manager,
+        address jug,
         address gntJoin,
         address daiJoin,
         bytes32 ilk,
@@ -495,7 +503,7 @@ contract DssProxyActions {
         }
         // Transfer funds to the funds which previously were sent to the proxy
         GemLike(GemJoinLike(gntJoin).gem()).transfer(bag, wadC);
-        cdp = openLockGemAndDraw(manager, gntJoin, daiJoin, ilk, wadC, wadD, false);
+        cdp = openLockGemAndDraw(manager, jug, gntJoin, daiJoin, ilk, wadC, wadD, false);
     }
 
     function wipeAndFreeETH(

@@ -31,19 +31,19 @@ https://github.com/makerdao/dss-proxy-actions
 
 `freeGem(address manager, address gemJoin, uint cdp, uint wad)`: executes `frob` to `cdp` decreasing locked collateral and withdraws `wad` amount of collateral from `gemJoin` adapter.
 
-`draw(address manager, address daiJoin, uint cdp, uint wad)`: executes `frob` to `cdp` increasing debt and exits `wad` amount of DAI token (minting it) from `daiJoin` adapter.
+`draw(address manager, address jug, address daiJoin, uint cdp, uint wad)`: updates collateral fee rate, executes `frob` to `cdp` increasing debt and exits `wad` amount of DAI token (minting it) from `daiJoin` adapter.
 
 `wipe(address manager, address daiJoin, uint cdp, uint wad)`: joins `wad` amount of DAI token to `daiJoin` adapter (burning it) and executes `frob` to `cdp` for decreasing debt.
 
 `safeWipe(address manager, address daiJoin, uint cdp, uint wad)`: same than `wipe` but requiring `this == cdp owner`.
 
-`lockETHAndDraw(address manager, address ethJoin, address daiJoin, uint cdp, uint wadD)`: combines `lockETH` and `draw`.
+`lockETHAndDraw(address manager, address jug, address ethJoin, address daiJoin, uint cdp, uint wadD)`: combines `lockETH` and `draw`.
 
-`openLockETHAndDraw(address manager, address ethJoin, address daiJoin, bytes32 ilk, uint wadD)`: combines `open`, `lockETH` and `draw`.
+`openLockETHAndDraw(address manager, address jug, address ethJoin, address daiJoin, bytes32 ilk, uint wadD)`: combines `open`, `lockETH` and `draw`.
 
-`lockGemAndDraw(address manager, address gemJoin, address daiJoin, uint cdp, uint wadC, uint wadD, bool transferFrom)`: combines `lockGem` and `draw`.
+`lockGemAndDraw(address manager, address jug, address gemJoin, address daiJoin, uint cdp, uint wadC, uint wadD, bool transferFrom)`: combines `lockGem` and `draw`.
 
-`openLockGemAndDraw(address manager, address gemJoin, address daiJoin, bytes32 ilk, uint wadC, uint wadD, bool transferFrom)`: combines `open`, `lockGem` and `draw`.
+`openLockGemAndDraw(address manager, address jug, address gemJoin, address daiJoin, bytes32 ilk, uint wadC, uint wadD, bool transferFrom)`: combines `open`, `lockGem` and `draw`.
 
 `wipeAndFreeETH(address manager, address ethJoin, address daiJoin, uint cdp, uint wadC, uint wadD)`: combines `wipe` and `freeETH`.
 
