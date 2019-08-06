@@ -16,6 +16,10 @@ contract ProxyCalls {
     DSProxy proxy;
     address proxyLib;
 
+    function transfer(address, address, uint256) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
     function open(address, bytes32) public returns (uint cdp) {
         bytes memory response = proxy.execute(proxyLib, msg.data);
         assembly {
@@ -250,6 +254,16 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
 
     function art(bytes32 ilk, address urn) public view returns (uint artV) {
         (,artV) = vat.urns(ilk, urn);
+    }
+
+    function testTransfer() public {
+        col.mint(10);
+        col.transfer(address(proxy), 10);
+        assertEq(col.balanceOf(address(proxy)), 10);
+        assertEq(col.balanceOf(address(123)), 0);
+        this.transfer(address(col), address(123), 4);
+        assertEq(col.balanceOf(address(proxy)), 6);
+        assertEq(col.balanceOf(address(123)), 4);
     }
 
     function testCreateCDP() public {

@@ -135,6 +135,10 @@ contract DssProxyActions {
 
     // Public functions
 
+    function transfer(address gem, address dst, uint wad) public {
+        GemLike(gem).transfer(dst, wad);
+    }
+
     function ethJoin_join(address apt, address urn) public payable {
         // Wraps ETH in WETH
         GemJoinLike(apt).gem().deposit.value(msg.value)();
