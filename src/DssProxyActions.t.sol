@@ -767,7 +767,6 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.file(address(pot), "dsr", uint(1.05 * 10 ** 27)); // 5% per second
         uint initialTime = 0; // Initial time set to 0 to avoid any intial rounding
         hevm.warp(initialTime);
-        pot.drip(); // It doesn't do anything as time didn't move
         uint cdp = this.open(address(manager), "ETH");
         this.lockETHAndDraw.value(1 ether)(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
         dai.approve(address(proxy), 50 ether);
@@ -788,7 +787,6 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.file(address(pot), "dsr", uint(1.05 * 10 ** 27));
         uint initialTime = 1; // Initial time set to 1 this way some the pie will not be the same than the initial DAI wad amount
         hevm.warp(initialTime);
-        pot.drip();
         uint cdp = this.open(address(manager), "ETH");
         this.lockETHAndDraw.value(1 ether)(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
         dai.approve(address(proxy), 50 ether);
@@ -799,7 +797,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         // Due rounding the DAI equivalent is not the same than initial wad amount
         assertEq(pot.pie(address(proxy)) * pot.chi(), 49999999999999999999350000000000000000000000000);
         hevm.warp(initialTime + 1);
-        pot.drip();
+        pot.drip(); // Just necessary to check in this test the updated value of chi
         assertEq(pot.pie(address(proxy)) * pot.chi(), 52499999999999999999317500000000000000000000000);
         this.dsrExit(address(daiJoin), address(pot), 52.5 ether);
         assertEq(dai.balanceOf(address(this)), 52499999999999999999);
@@ -810,7 +808,6 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.file(address(pot), "dsr", uint(1.03434234324 * 10 ** 27));
         uint initialTime = 1;
         hevm.warp(initialTime);
-        pot.drip();
         uint cdp = this.open(address(manager), "ETH");
         this.lockETHAndDraw.value(1 ether)(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
         dai.approve(address(proxy), 50 ether);
@@ -829,7 +826,6 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.file(address(pot), "dsr", uint(1.03434234324 * 10 ** 27));
         uint initialTime = 1;
         hevm.warp(initialTime);
-        pot.drip();
         uint cdp = this.open(address(manager), "ETH");
         this.lockETHAndDraw.value(1 ether)(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
         dai.approve(address(proxy), 50 ether);

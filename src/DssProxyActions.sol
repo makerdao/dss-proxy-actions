@@ -561,6 +561,8 @@ contract DssProxyActions {
         address pot,
         uint wad
     ) public {
+        // Executes drip to get the chi rate updated to rho == now, otherwise join will fail
+        PotLike(pot).drip();
         // Joins wad amount to the vat balance
         daiJoin_join(daiJoin, address(this), wad);
         // Approves the pot to take out DAI from the proxy's balance in the vat
