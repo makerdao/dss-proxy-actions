@@ -69,6 +69,15 @@ contract PotLike {
     function exit(uint) public;
 }
 
+contract ProxyRegistryLike {
+    function proxies(address) public view returns (address);
+    function build(address) public returns (address);
+}
+
+contract ProxyLike {
+    function owner() public view returns (address);
+}
+
 contract DssProxyActions {
     uint256 constant ONE = 10 ** 27;
 
@@ -175,16 +184,16 @@ contract DssProxyActions {
 
     function hope(
         address obj,
-        address guy
+        address usr
     ) public {
-        HopeLike(obj).hope(guy);
+        HopeLike(obj).hope(usr);
     }
 
     function nope(
         address obj,
-        address guy
+        address usr
     ) public {
-        HopeLike(obj).nope(guy);
+        HopeLike(obj).nope(usr);
     }
 
     function open(
@@ -197,18 +206,41 @@ contract DssProxyActions {
     function give(
         address manager,
         uint cdp,
-        address guy
+        address usr
     ) public {
-        ManagerLike(manager).give(cdp, guy);
+        ManagerLike(manager).give(cdp, usr);
+    }
+
+    function giveToProxy(
+        address proxyRegistry,
+        address manager,
+        uint cdp,
+        address dst
+    ) public {
+        // Gets actual proxy address
+        address proxy = ProxyRegistryLike(proxyRegistry).proxies(dst);
+        // Checks if the proxy address already existed and dst address is still the owner
+        if (proxy == address(0) || ProxyLike(proxy).owner() != dst) {
+            uint csize;
+            assembly {
+                csize := extcodesize(dst)
+            }
+            // We want to avoid creating a proxy for a contract address that might not be able to handle proxies, then losing the CDP
+            require(csize == 0, "Dst-is-a-contract");
+            // Creates the proxy for the dst address
+            proxy = ProxyRegistryLike(proxyRegistry).build(dst);
+        }
+        // Transfers CDP to the dst proxy
+        ManagerLike(manager).give(cdp, proxy);
     }
 
     function allow(
         address manager,
         uint cdp,
-        address guy,
+        address usr,
         uint ok
     ) public {
-        ManagerLike(manager).allow(cdp, guy, ok);
+        ManagerLike(manager).allow(cdp, usr, ok);
     }
 
     function flux(

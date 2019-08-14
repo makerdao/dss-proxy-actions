@@ -10,7 +10,7 @@ import {GemJoin3, GemJoin4} from "dss-deploy/join.sol";
 import {DSValue} from "ds-value/value.sol";
 import {DssCdpManager} from "dss-cdp-manager/DssCdpManager.sol";
 import {GetCdps} from "dss-cdp-manager/GetCdps.sol";
-import {DSProxyFactory, DSProxy} from "ds-proxy/proxy.sol";
+import {ProxyRegistry, DSProxyFactory, DSProxy} from "proxy-registry/ProxyRegistry.sol";
 
 contract ProxyCalls {
     DSProxy proxy;
@@ -28,6 +28,10 @@ contract ProxyCalls {
     }
 
     function give(address, uint, address) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
+    function giveToProxy(address, address, uint, address) public {
         proxy.execute(proxyLib, msg.data);
     }
 
@@ -207,6 +211,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     GemJoin4 gntJoin;
     GNT gnt;
     DSValue pipGNT;
+    ProxyRegistry registry;
 
     function setUp() public {
         super.setUp();
@@ -237,8 +242,9 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
 
         manager = new DssCdpManager(address(vat));
         DSProxyFactory factory = new DSProxyFactory();
+        registry = new ProxyRegistry(address(factory));
         proxyLib = address(new DssProxyActions());
-        proxy = DSProxy(factory.build());
+        proxy = DSProxy(registry.build());
     }
 
     function ink(bytes32 ilk, address urn) public view returns (uint inkV) {
@@ -269,6 +275,30 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         uint cdp = this.open(address(manager), "ETH");
         this.give(address(manager), cdp, address(123));
         assertEq(manager.owns(cdp), address(123));
+    }
+
+    function testGiveCDPToProxy() public {
+        uint cdp = this.open(address(manager), "ETH");
+        address userProxy = registry.build(address(123));
+        this.giveToProxy(address(registry), address(manager), cdp, address(123));
+        assertEq(manager.owns(cdp), userProxy);
+    }
+
+    function testGiveCDPToNewProxy() public {
+        uint cdp = this.open(address(manager), "ETH");
+        assertEq(address(registry.proxies(address(123))), address(0));
+        this.giveToProxy(address(registry), address(manager), cdp, address(123));
+        DSProxy userProxy = registry.proxies(address(123));
+        assertTrue(address(userProxy) != address(0));
+        assertEq(userProxy.owner(), address(123));
+        assertEq(manager.owns(cdp), address(userProxy));
+    }
+
+    function testFailGiveCDPToNewContractProxy() public {
+        uint cdp = this.open(address(manager), "ETH");
+        FakeUser user = new FakeUser();
+        assertEq(address(registry.proxies(address(user))), address(0));
+        this.giveToProxy(address(registry), address(manager), cdp, address(user)); // Fails as user is a contract and not a regular address
     }
 
     function testGiveCDPAllowedUser() public {
