@@ -7,6 +7,8 @@ https://github.com/makerdao/dss-proxy-actions
 
 `give(address manager, uint cdp, address guy)`: transfers the ownership of `cdp` to `guy` address in the `manager` registry.
 
+`giveToProxy(address proxyRegistry, address manager, uint cdp, address guy)`: transfers the ownership of `cdp` to the proxy of `guy` address (via `proxyRegistry`) in the `manager` registry.
+
 `allow(address manager, uint cdp, address guy, uint ok)`: allows/denies `guy` address to manage the `cdp`.
 
 `flux(address manager, uint cdp, address dst, uint wad)`: moves `wad` amount of collateral from `cdp` address to `dst` address.
