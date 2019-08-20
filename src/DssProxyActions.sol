@@ -146,6 +146,26 @@ contract DssProxyActions {
         dart = uint(dart) <= art ? - dart : - toInt(art);
     }
 
+    function _getWipeAllWad(
+        address vat,
+        address usr,
+        address urn,
+        bytes32 ilk
+    ) internal view returns (uint wad) {
+        // Gets actual rate from the vat
+        (, uint rate,,,) = VatLike(vat).ilks(ilk);
+        // Gets actual art value of the urn
+        (, uint art) = VatLike(vat).urns(ilk, urn);
+        // Gets actual dai amount in the urn
+        uint dai = VatLike(vat).dai(usr);
+
+        uint rad = sub(mul(art, rate), dai);
+        wad = rad / ONE;
+
+        // If the rad precision has some dust, it will need to request for 1 extra wad wei
+        wad = mul(wad, ONE) < rad ? wad + 1 : wad;
+    }
+
     // Public functions
 
     function transfer(address gem, address dst, uint wad) public {
@@ -425,6 +445,29 @@ contract DssProxyActions {
         );
     }
 
+    function wipeAll(
+        address manager,
+        address daiJoin,
+        uint cdp
+    ) public {
+        address vat = ManagerLike(manager).vat();
+        address urn = ManagerLike(manager).urns(cdp);
+        bytes32 ilk = ManagerLike(manager).ilks(cdp);
+        (, uint art) = VatLike(vat).urns(ilk, urn);
+
+        // Joins DAI amount into the vat
+        daiJoin_join(daiJoin, address(this), _getWipeAllWad(vat, address(this), urn, ilk));
+        // Paybacks debt to the CDP
+        VatLike(vat).frob(
+            ilk,
+            urn,
+            address(this),
+            address(this),
+            0,
+            -int(art)
+        );
+    }
+
     function safeWipe(
         address manager,
         address daiJoin,
@@ -439,6 +482,22 @@ contract DssProxyActions {
         daiJoin_join(daiJoin, urn, wad);
         // Paybacks debt to the CDP
         frob(manager, cdp, 0, _getWipeDart(vat, VatLike(vat).dai(urn), urn, ilk));
+    }
+
+    function safeWipeAll(
+        address manager,
+        address daiJoin,
+        uint cdp
+    ) public {
+        address vat = ManagerLike(manager).vat();
+        address urn = ManagerLike(manager).urns(cdp);
+        bytes32 ilk = ManagerLike(manager).ilks(cdp);
+        (, uint art) = VatLike(vat).urns(ilk, urn);
+
+        // Joins DAI amount into the vat
+        daiJoin_join(daiJoin, urn, _getWipeAllWad(vat, urn, urn, ilk));
+        // Paybacks debt to the CDP
+        frob(manager, cdp, 0, -int(art));
     }
 
     function lockETHAndDraw(
@@ -565,6 +624,36 @@ contract DssProxyActions {
         msg.sender.transfer(wadC);
     }
 
+    function wipeAllAndFreeETH(
+        address manager,
+        address ethJoin,
+        address daiJoin,
+        uint cdp,
+        uint wadC
+    ) public {
+        address vat = ManagerLike(manager).vat();
+        address urn = ManagerLike(manager).urns(cdp);
+        bytes32 ilk = ManagerLike(manager).ilks(cdp);
+        (, uint art) = VatLike(vat).urns(ilk, urn);
+
+        // Joins DAI amount into the vat
+        daiJoin_join(daiJoin, urn, _getWipeAllWad(vat, urn, urn, ilk));
+        // Paybacks debt to the CDP and unlocks WETH amount from it
+        frob(
+            manager,
+            cdp,
+            address(this),
+            -toInt(wadC),
+            -int(art)
+        );
+        // Exits WETH amount to proxy address as a token
+        GemJoinLike(ethJoin).exit(address(this), wadC);
+        // Converts WETH to ETH
+        GemJoinLike(ethJoin).gem().withdraw(wadC);
+        // Sends ETH back to the user's wallet
+        msg.sender.transfer(wadC);
+    }
+
     function wipeAndFreeGem(
         address manager,
         address gemJoin,
@@ -583,6 +672,32 @@ contract DssProxyActions {
             address(this),
             -toInt(convertTo18(gemJoin, wadC)),
             _getWipeDart(ManagerLike(manager).vat(), VatLike(ManagerLike(manager).vat()).dai(urn), urn, ManagerLike(manager).ilks(cdp))
+        );
+        // Exits token amount to the user's wallet as a token
+        GemJoinLike(gemJoin).exit(msg.sender, wadC);
+    }
+
+    function wipeAllAndFreeGem(
+        address manager,
+        address gemJoin,
+        address daiJoin,
+        uint cdp,
+        uint wadC
+    ) public {
+        address vat = ManagerLike(manager).vat();
+        address urn = ManagerLike(manager).urns(cdp);
+        bytes32 ilk = ManagerLike(manager).ilks(cdp);
+        (, uint art) = VatLike(vat).urns(ilk, urn);
+
+        // Joins DAI amount into the vat
+        daiJoin_join(daiJoin, urn, _getWipeAllWad(vat, urn, urn, ilk));
+        // Paybacks debt to the CDP and unlocks token amount from it
+        frob(
+            manager,
+            cdp,
+            address(this),
+            -toInt(convertTo18(gemJoin, wadC)),
+            -int(art)
         );
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, wadC);

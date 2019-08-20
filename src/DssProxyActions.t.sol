@@ -122,7 +122,15 @@ contract ProxyCalls {
         proxy.execute(proxyLib, msg.data);
     }
 
+    function wipeAll(address, address, uint) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
     function safeWipe(address, address, uint, uint) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
+    function safeWipeAll(address, address, uint) public {
         proxy.execute(proxyLib, msg.data);
     }
 
@@ -175,7 +183,15 @@ contract ProxyCalls {
         proxy.execute(proxyLib, msg.data);
     }
 
+    function wipeAllAndFreeETH(address, address, address, uint, uint) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
     function wipeAndFreeGem(address, address, address, uint, uint, uint) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
+    function wipeAllAndFreeGem(address, address, address, uint, uint) public {
         proxy.execute(proxyLib, msg.data);
     }
 
@@ -551,6 +567,16 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(art("ETH", manager.urns(cdp)), 200 ether);
     }
 
+    function testWipeAll() public {
+        uint cdp = this.open(address(manager), "ETH");
+        this.lockETH.value(2 ether)(address(manager), address(ethJoin), cdp);
+        this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
+        dai.approve(address(proxy), 300 ether);
+        this.wipeAll(address(manager), address(daiJoin), cdp);
+        assertEq(dai.balanceOf(address(this)), 0);
+        assertEq(art("ETH", manager.urns(cdp)), 0);
+    }
+
     function testSafeWipe() public {
         uint cdp = this.open(address(manager), "ETH");
         this.lockETH.value(2 ether)(address(manager), address(ethJoin), cdp);
@@ -559,6 +585,16 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.safeWipe(address(manager), address(daiJoin), cdp, 100 ether);
         assertEq(dai.balanceOf(address(this)), 200 ether);
         assertEq(art("ETH", manager.urns(cdp)), 200 ether);
+    }
+
+    function testSafeWipeAll() public {
+        uint cdp = this.open(address(manager), "ETH");
+        this.lockETH.value(2 ether)(address(manager), address(ethJoin), cdp);
+        this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
+        dai.approve(address(proxy), 300 ether);
+        this.safeWipeAll(address(manager), address(daiJoin), cdp);
+        assertEq(dai.balanceOf(address(this)), 0);
+        assertEq(art("ETH", manager.urns(cdp)), 0);
     }
 
     function testWipeOtherCDPOwner() public {
@@ -579,6 +615,15 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         dai.approve(address(proxy), 100 ether);
         this.give(address(manager), cdp, address(123));
         this.safeWipe(address(manager), address(daiJoin), cdp, 100 ether);
+    }
+
+    function testFailSafeWipeAllOtherCDPOwner() public {
+        uint cdp = this.open(address(manager), "ETH");
+        this.lockETH.value(2 ether)(address(manager), address(ethJoin), cdp);
+        this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
+        dai.approve(address(proxy), 300 ether);
+        this.give(address(manager), cdp, address(123));
+        this.safeWipeAll(address(manager), address(daiJoin), cdp);
     }
 
     function testWipeAfterDrip() public {
@@ -724,7 +769,20 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         dai.approve(address(proxy), 250 ether);
         this.wipeAndFreeETH(address(manager), address(ethJoin), address(daiJoin), cdp, 1.5 ether, 250 ether);
         assertEq(ink("ETH", manager.urns(cdp)), 0.5 ether);
+        assertEq(art("ETH", manager.urns(cdp)), 50 ether);
         assertEq(dai.balanceOf(address(this)), 50 ether);
+        assertEq(address(this).balance, initialBalance - 0.5 ether);
+    }
+
+    function testWipeAllAndFreeETH() public {
+        uint cdp = this.open(address(manager), "ETH");
+        uint initialBalance = address(this).balance;
+        this.lockETHAndDraw.value(2 ether)(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 300 ether);
+        dai.approve(address(proxy), 300 ether);
+        this.wipeAllAndFreeETH(address(manager), address(ethJoin), address(daiJoin), cdp, 1.5 ether);
+        assertEq(ink("ETH", manager.urns(cdp)), 0.5 ether);
+        assertEq(art("ETH", manager.urns(cdp)), 0);
+        assertEq(dai.balanceOf(address(this)), 0);
         assertEq(address(this).balance, initialBalance - 0.5 ether);
     }
 
@@ -736,7 +794,21 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         dai.approve(address(proxy), 8 ether);
         this.wipeAndFreeGem(address(manager), address(colJoin), address(daiJoin), cdp, 1.5 ether, 8 ether);
         assertEq(ink("COL", manager.urns(cdp)), 0.5 ether);
+        assertEq(art("COL", manager.urns(cdp)), 2 ether);
         assertEq(dai.balanceOf(address(this)), 2 ether);
+        assertEq(col.balanceOf(address(this)), 4.5 ether);
+    }
+
+    function testWipeAllAndFreeGem() public {
+        col.mint(5 ether);
+        uint cdp = this.open(address(manager), "COL");
+        col.approve(address(proxy), 2 ether);
+        this.lockGemAndDraw(address(manager), address(jug), address(colJoin), address(daiJoin), cdp, 2 ether, 10 ether, true);
+        dai.approve(address(proxy), 10 ether);
+        this.wipeAllAndFreeGem(address(manager), address(colJoin), address(daiJoin), cdp, 1.5 ether);
+        assertEq(ink("COL", manager.urns(cdp)), 0.5 ether);
+        assertEq(art("COL", manager.urns(cdp)), 0);
+        assertEq(dai.balanceOf(address(this)), 0);
         assertEq(col.balanceOf(address(this)), 4.5 ether);
     }
 
