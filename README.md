@@ -37,7 +37,11 @@ https://github.com/makerdao/dss-proxy-actions
 
 `wipe(address manager, address daiJoin, uint cdp, uint wad)`: joins `wad` amount of DAI token to `daiJoin` adapter (burning it) and executes `frob` to `cdp` for decreasing debt.
 
+`wipeAll(address manager, address daiJoin, uint cdp)`: joins all the necessary amount of DAI token to `daiJoin` adapter (burning it) and executes `frob` to `cdp` setting the debt to zero.
+
 `safeWipe(address manager, address daiJoin, uint cdp, uint wad)`: same than `wipe` but requiring `this == cdp owner` and in some cases has a better management of dust in the `urn` of the `cdp`.
+
+`safeWipeAll(address manager, address daiJoin, uint cdp)`: same than `wipeAll` but requiring `this == cdp owner` and in some cases has a better management of dust in the `urn` of the `cdp`.
 
 `lockETHAndDraw(address manager, address jug, address ethJoin, address daiJoin, uint cdp, uint wadD)`: combines `lockETH` and `draw`.
 
@@ -49,7 +53,11 @@ https://github.com/makerdao/dss-proxy-actions
 
 `wipeAndFreeETH(address manager, address ethJoin, address daiJoin, uint cdp, uint wadC, uint wadD)`: combines `wipe` and `freeETH`.
 
+`wipeAllAndFreeETH(address manager, address ethJoin, address daiJoin, uint cdp, uint wadC)`: combines `wipeAll` and `freeETH`.
+
 `wipeAndFreeGem(address manager, address gemJoin, address daiJoin, uint cdp, uint wadC, uint wadD)`: combines `wipe` and `freeGem`.
+
+`wipeAllAndFreeGem(address manager, address gemJoin, address daiJoin, uint cdp, uint wadC)`: combines `wipeAll` and `freeGem`.
 
 `dsrJoin(address daiJoin, address pot, uint wad)`: joins `wad` amount of DAI token to `daiJoin` adapter (burning it) and moves balance to `pot` for DAI Saving Rates.
 
