@@ -602,7 +602,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.lockETH.value(2 ether)(address(manager), address(ethJoin), cdp);
         this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
         dai.approve(address(proxy), 300 ether);
-        this.wipe(address(manager), address(daiJoin), cdp, 300 ether);
+        this.safeWipe(address(manager), address(daiJoin), cdp, 300 ether);
         assertEq(art("ETH", manager.urns(cdp)), 0);
     }
 
@@ -617,7 +617,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
             this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
         }
         dai.approve(address(proxy), 300 ether * times);
-        this.wipe(address(manager), address(daiJoin), cdp, 300 ether * times);
+        this.safeWipe(address(manager), address(daiJoin), cdp, 300 ether * times);
         assertEq(art("ETH", manager.urns(cdp)), 0);
     }
 

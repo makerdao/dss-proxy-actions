@@ -347,7 +347,7 @@ contract DssProxyActions {
         uint cdp,
         uint wad,
         bool transferFrom
-    ) public payable {
+    ) public {
         require(ManagerLike(manager).owns(cdp) == address(this), "cdp-not-owned");
         lockGem(manager, gemJoin, cdp, wad, transferFrom);
     }
@@ -411,24 +411,18 @@ contract DssProxyActions {
         address vat = ManagerLike(manager).vat();
         address urn = ManagerLike(manager).urns(cdp);
         bytes32 ilk = ManagerLike(manager).ilks(cdp);
-        if (ManagerLike(manager).owns(cdp) == address(this)) {
-            // Joins DAI amount into the vat
-            daiJoin_join(daiJoin, urn, wad);
-            // Paybacks debt to the CDP
-            frob(manager, cdp, 0, _getWipeDart(vat, VatLike(vat).dai(urn), urn, ilk));
-        } else {
-            // Joins DAI amount into the vat
-            daiJoin_join(daiJoin, address(this), wad);
-            // Paybacks debt to the CDP
-            VatLike(vat).frob(
-                ilk,
-                urn,
-                address(this),
-                address(this),
-                0,
-                _getWipeDart(vat, wad * ONE, urn, ilk)
-            );
-        }
+
+        // Joins DAI amount into the vat
+        daiJoin_join(daiJoin, address(this), wad);
+        // Paybacks debt to the CDP
+        VatLike(vat).frob(
+            ilk,
+            urn,
+            address(this),
+            address(this),
+            0,
+            _getWipeDart(vat, wad * ONE, urn, ilk)
+        );
     }
 
     function safeWipe(
@@ -437,8 +431,14 @@ contract DssProxyActions {
         uint cdp,
         uint wad
     ) public {
-        require(ManagerLike(manager).owns(cdp) == address(this), "cdp-not-owned");
-        wipe(manager, daiJoin, cdp, wad);
+        address vat = ManagerLike(manager).vat();
+        address urn = ManagerLike(manager).urns(cdp);
+        bytes32 ilk = ManagerLike(manager).ilks(cdp);
+
+        // Joins DAI amount into the vat
+        daiJoin_join(daiJoin, urn, wad);
+        // Paybacks debt to the CDP
+        frob(manager, cdp, 0, _getWipeDart(vat, VatLike(vat).dai(urn), urn, ilk));
     }
 
     function lockETHAndDraw(
@@ -487,7 +487,7 @@ contract DssProxyActions {
         uint wadC,
         uint wadD,
         bool transferFrom
-    ) public{
+    ) public {
         address urn = ManagerLike(manager).urns(cdp);
         address vat = ManagerLike(manager).vat();
         bytes32 ilk = ManagerLike(manager).ilks(cdp);
