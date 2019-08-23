@@ -445,6 +445,22 @@ contract DssProxyActions {
         );
     }
 
+    function safeWipe(
+        address manager,
+        address daiJoin,
+        uint cdp,
+        uint wad
+    ) public {
+        address vat = ManagerLike(manager).vat();
+        address urn = ManagerLike(manager).urns(cdp);
+        bytes32 ilk = ManagerLike(manager).ilks(cdp);
+
+        // Joins DAI amount into the vat
+        daiJoin_join(daiJoin, urn, wad);
+        // Paybacks debt to the CDP
+        frob(manager, cdp, 0, _getWipeDart(vat, VatLike(vat).dai(urn), urn, ilk));
+    }
+
     function wipeAll(
         address manager,
         address daiJoin,
@@ -466,22 +482,6 @@ contract DssProxyActions {
             0,
             -int(art)
         );
-    }
-
-    function safeWipe(
-        address manager,
-        address daiJoin,
-        uint cdp,
-        uint wad
-    ) public {
-        address vat = ManagerLike(manager).vat();
-        address urn = ManagerLike(manager).urns(cdp);
-        bytes32 ilk = ManagerLike(manager).ilks(cdp);
-
-        // Joins DAI amount into the vat
-        daiJoin_join(daiJoin, urn, wad);
-        // Paybacks debt to the CDP
-        frob(manager, cdp, 0, _getWipeDart(vat, VatLike(vat).dai(urn), urn, ilk));
     }
 
     function safeWipeAll(

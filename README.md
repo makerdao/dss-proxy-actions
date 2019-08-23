@@ -37,9 +37,9 @@ https://github.com/makerdao/dss-proxy-actions
 
 `wipe(address manager, address daiJoin, uint cdp, uint wad)`: joins `wad` amount of DAI token to `daiJoin` adapter (burning it) and executes `frob` to `cdp` for decreasing debt.
 
-`wipeAll(address manager, address daiJoin, uint cdp)`: joins all the necessary amount of DAI token to `daiJoin` adapter (burning it) and executes `frob` to `cdp` setting the debt to zero.
-
 `safeWipe(address manager, address daiJoin, uint cdp, uint wad)`: same than `wipe` but requiring `this == cdp owner` and in some cases has a better management of dust in the `urn` of the `cdp`.
+
+`wipeAll(address manager, address daiJoin, uint cdp)`: joins all the necessary amount of DAI token to `daiJoin` adapter (burning it) and executes `frob` to `cdp` setting the debt to zero.
 
 `safeWipeAll(address manager, address daiJoin, uint cdp)`: same than `wipeAll` but requiring `this == cdp owner` and in some cases has a better management of dust in the `urn` of the `cdp`.
 
