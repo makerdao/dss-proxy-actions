@@ -15,7 +15,8 @@ contract ManagerLike {
     function vat() public view returns (address);
     function open(bytes32) public returns (uint);
     function give(uint, address) public;
-    function allow(uint, address, uint) public;
+    function cdpAllow(uint, address, uint) public;
+    function urnAllow(address, uint) public;
     function frob(uint, int, int) public;
     function frob(uint, address, int, int) public;
     function flux(uint, address, uint) public;
@@ -254,13 +255,21 @@ contract DssProxyActions {
         ManagerLike(manager).give(cdp, proxy);
     }
 
-    function allow(
+    function cdpAllow(
         address manager,
         uint cdp,
         address usr,
         uint ok
     ) public {
-        ManagerLike(manager).allow(cdp, usr, ok);
+        ManagerLike(manager).cdpAllow(cdp, usr, ok);
+    }
+
+    function urnAllow(
+        address manager,
+        address usr,
+        uint ok
+    ) public {
+        ManagerLike(manager).urnAllow(usr, ok);
     }
 
     function flux(

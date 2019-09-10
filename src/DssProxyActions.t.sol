@@ -35,7 +35,11 @@ contract ProxyCalls {
         proxy.execute(proxyLib, msg.data);
     }
 
-    function allow(address, uint, address, uint) public {
+    function cdpAllow(address, uint, address, uint) public {
+        proxy.execute(proxyLib, msg.data);
+    }
+
+    function urnAllow(address, address, uint) public {
         proxy.execute(proxyLib, msg.data);
     }
 
@@ -320,9 +324,17 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     function testGiveCDPAllowedUser() public {
         uint cdp = this.open(address(manager), "ETH");
         FakeUser user = new FakeUser();
-        this.allow(address(manager), cdp, address(user), 1);
+        this.cdpAllow(address(manager), cdp, address(user), 1);
         user.doGive(manager, cdp, address(123));
         assertEq(manager.owns(cdp), address(123));
+    }
+
+    function testAllowUrn() public {
+        assertEq(manager.urnCan(address(proxy), address(123)), 0);
+        this.urnAllow(address(manager), address(123), 1);
+        assertEq(manager.urnCan(address(proxy), address(123)), 1);
+        this.urnAllow(address(manager), address(123), 0);
+        assertEq(manager.urnCan(address(proxy), address(123)), 0);
     }
 
     function testFlux() public {

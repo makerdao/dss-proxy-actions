@@ -5,11 +5,13 @@ https://github.com/makerdao/dss-proxy-actions
 
 `open(address manager, bytes32 ilk)`: creates an `UrnHandler` (`cdp`) for the caller (for a specific `ilk`) and allows to manage it via the internal registry of the `manager`.
 
-`give(address manager, uint cdp, address guy)`: transfers the ownership of `cdp` to `guy` address in the `manager` registry.
+`give(address manager, uint cdp, address usr)`: transfers the ownership of `cdp` to `usr` address in the `manager` registry.
 
-`giveToProxy(address proxyRegistry, address manager, uint cdp, address guy)`: transfers the ownership of `cdp` to the proxy of `guy` address (via `proxyRegistry`) in the `manager` registry.
+`giveToProxy(address proxyRegistry, address manager, uint cdp, address usr)`: transfers the ownership of `cdp` to the proxy of `usr` address (via `proxyRegistry`) in the `manager` registry.
 
-`allow(address manager, uint cdp, address guy, uint ok)`: allows/denies `guy` address to manage the `cdp`.
+`cdpAllow(address manager, uint cdp, address usr, uint ok)`: allows/denies `usr` address to manage the `cdp`.
+
+`urnAllow(address manager, address usr, uint ok)`: allows/denies `usr` address to manage the `msg.sender` address as `dst` for `quit`.
 
 `flux(address manager, uint cdp, address dst, uint wad)`: moves `wad` amount of collateral from `cdp` address to `dst` address.
 
