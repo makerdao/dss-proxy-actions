@@ -26,6 +26,7 @@ contract ManagerLike {
 }
 
 contract VatLike {
+    function can(address, address) public view returns (uint);
     function ilks(bytes32) public view returns (uint, uint, uint, uint, uint);
     function dai(address) public view returns (uint);
     function urns(bytes32, address) public view returns (uint, uint);
@@ -78,6 +79,10 @@ contract ProxyRegistryLike {
 contract ProxyLike {
     function owner() public view returns (address);
 }
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// WARNING: These functions meant to be used as a a library for a DSProxy. Some are unsafe if you call them directly.
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 contract DssProxyActions {
     uint256 constant ONE = 10 ** 27;
@@ -425,8 +430,10 @@ contract DssProxyActions {
         frob(manager, cdp, 0, _getDrawDart(vat, urn, ilk, wad));
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
         move(manager, cdp, address(this), toRad(wad));
-        // Allows adapter to access to proxy's balance in the vat
-        VatLike(vat).hope(daiJoin);
+        // Allows adapter to access to proxy's DAI balance in the vat
+        if (VatLike(vat).can(address(this), address(daiJoin)) == 0) {
+            VatLike(vat).hope(daiJoin);
+        }
         // Exits DAI to the user's wallet as a token
         DaiJoinLike(daiJoin).exit(msg.sender, wad);
     }
@@ -528,8 +535,10 @@ contract DssProxyActions {
         frob(manager, cdp, toInt(msg.value), _getDrawDart(vat, urn, ilk, wadD));
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
         move(manager, cdp, address(this), toRad(wadD));
-        // Allows adapter to access to proxy's balance in the vat
-        VatLike(vat).hope(daiJoin);
+        // Allows adapter to access to proxy's DAI balance in the vat
+        if (VatLike(vat).can(address(this), address(daiJoin)) == 0) {
+            VatLike(vat).hope(daiJoin);
+        }
         // Exits DAI to the user's wallet as a token
         DaiJoinLike(daiJoin).exit(msg.sender, wadD);
     }
@@ -567,8 +576,10 @@ contract DssProxyActions {
         frob(manager, cdp, toInt(convertTo18(gemJoin, wadC)), _getDrawDart(vat, urn, ilk, wadD));
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
         move(manager, cdp, address(this), toRad(wadD));
-        // Allows adapter to access to proxy's balance in the vat
-        VatLike(vat).hope(daiJoin);
+        // Allows adapter to access to proxy's DAI balance in the vat
+        if (VatLike(vat).can(address(this), address(daiJoin)) == 0) {
+            VatLike(vat).hope(daiJoin);
+        }
         // Exits DAI to the user's wallet as a token
         DaiJoinLike(daiJoin).exit(msg.sender, wadD);
     }
@@ -732,6 +743,7 @@ contract DssProxyActions {
         address pot,
         uint wad
     ) public {
+        VatLike vat = DaiJoinLike(daiJoin).vat();
         // Executes drip to count the savings accumulated until this moment
         PotLike(pot).drip();
         // Calculates the pie value in the pot equivalent to the DAI wad amount
@@ -740,6 +752,10 @@ contract DssProxyActions {
         PotLike(pot).exit(pie);
         // Checks the actual balance of DAI in the vat after the pot exit
         uint bal = DaiJoinLike(daiJoin).vat().dai(address(this));
+        // Allows adapter to access to proxy's DAI balance in the vat
+        if (vat.can(address(this), address(daiJoin)) == 0) {
+            vat.hope(daiJoin);
+        }
         // It is necessary to check if due rounding the exact wad amount can be exited by the adapter.
         // Otherwise it will do the maximum DAI balance in the vat
         DaiJoinLike(daiJoin).exit(
@@ -752,12 +768,17 @@ contract DssProxyActions {
         address daiJoin,
         address pot
     ) public {
+        VatLike vat = DaiJoinLike(daiJoin).vat();
         // Executes drip to count the savings accumulated until this moment
         PotLike(pot).drip();
         // Gets the total pie belonging to the proxy address
         uint pie = PotLike(pot).pie(address(this));
         // Exits DAI from the pot
         PotLike(pot).exit(pie);
+        // Allows adapter to access to proxy's DAI balance in the vat
+        if (vat.can(address(this), address(daiJoin)) == 0) {
+            vat.hope(daiJoin);
+        }
         // Exits the DAI amount corresponding to the value of pie
         DaiJoinLike(daiJoin).exit(msg.sender, mul(PotLike(pot).chi(), pie) / ONE);
     }

@@ -886,6 +886,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         dai.approve(address(proxy), 50 ether);
         assertEq(dai.balanceOf(address(this)), 50 ether);
         assertEq(pot.pie(address(this)), 0 ether);
+        this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in dsrExit
         this.dsrJoin(address(daiJoin), address(pot), 50 ether);
         assertEq(dai.balanceOf(address(this)), 0 ether);
         assertEq(pot.pie(address(proxy)) * pot.chi(), 50 ether * ONE);
@@ -906,6 +907,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         dai.approve(address(proxy), 50 ether);
         assertEq(dai.balanceOf(address(this)), 50 ether);
         assertEq(pot.pie(address(this)), 0 ether);
+        this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in dsrExit
         this.dsrJoin(address(daiJoin), address(pot), 50 ether);
         assertEq(dai.balanceOf(address(this)), 0 ether);
         // Due rounding the DAI equivalent is not the same than initial wad amount
@@ -927,6 +929,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         dai.approve(address(proxy), 50 ether);
         assertEq(dai.balanceOf(address(this)), 50 ether);
         assertEq(pot.pie(address(this)), 0 ether);
+        this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in dsrExit
         this.dsrJoin(address(daiJoin), address(pot), 50 ether);
         assertEq(pot.pie(address(proxy)) * pot.chi(), 49999999999999999999993075745400000000000000000);
         assertEq(vat.dai(address(proxy)), mul(50 ether, ONE) - 49999999999999999999993075745400000000000000000);
@@ -942,6 +945,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         hevm.warp(initialTime);
         uint cdp = this.open(address(manager), "ETH");
         this.lockETHAndDraw.value(1 ether)(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
+        this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in dsrExitAll
         dai.approve(address(proxy), 50 ether);
         this.dsrJoin(address(daiJoin), address(pot), 50 ether);
         this.dsrExitAll(address(daiJoin), address(pot));
