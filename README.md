@@ -23,6 +23,10 @@ https://github.com/makerdao/dss-proxy-actions
 
 `quit(address manager, uint cdp, address dst)`: moves `cdp` collateral balance and debt to `dst` address.
 
+`enter(address manager, address src, uint cdp)`: moves `src` collateral balance and debt to `cdp`.
+
+`shift(address manager, uint cdpSrc, uint cdpDst)`: moves `cdpSrc` collateral balance and debt to `cdpDst`.
+
 `lockETH(address manager, address ethJoin, uint cdp)`: deposits `msg.value` amount of ETH in `ethJoin` adapter and executes `frob` to `cdp` increasing the locked value.
 
 `safeLockETH(address manager, address ethJoin, uint cdp)`: same than `lockETH` but requiring `this == cdp owner`.
