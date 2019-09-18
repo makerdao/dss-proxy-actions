@@ -23,6 +23,8 @@ contract ManagerLike {
     function move(uint, address, uint) public;
     function exit(address, uint, address, uint) public;
     function quit(uint, address) public;
+    function enter(address, uint) public;
+    function shift(uint, uint) public;
 }
 
 contract VatLike {
@@ -320,6 +322,22 @@ contract DssProxyActions {
         address dst
     ) public {
         ManagerLike(manager).quit(cdp, dst);
+    }
+
+    function enter(
+        address manager,
+        address src,
+        uint cdp
+    ) public {
+        ManagerLike(manager).enter(src, cdp);
+    }
+
+    function shift(
+        address manager,
+        uint cdpSrc,
+        uint cdpOrg
+    ) public {
+        ManagerLike(manager).shift(cdpSrc, cdpOrg);
     }
 
     function makeGemBag(

@@ -71,6 +71,14 @@ contract ProxyCalls {
         proxy.execute(dssProxyActions, msg.data);
     }
 
+    function enter(address, address, uint) public {
+        proxy.execute(dssProxyActions, msg.data);
+    }
+
+    function shift(address, uint, uint) public {
+        proxy.execute(dssProxyActions, msg.data);
+    }
+
     function lockETH(address, address, uint) public payable {
         (bool success,) = address(proxy).call.value(msg.value)(abi.encodeWithSignature("execute(address,bytes)", dssProxyActions, msg.data));
         require(success, "");
@@ -875,6 +883,47 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(art("ETH", manager.urns(cdp)), 0);
         assertEq(ink("ETH", address(proxy)), 1 ether);
         assertEq(art("ETH", address(proxy)), 50 ether);
+    }
+
+    function testEnter() public {
+        weth.deposit.value(1 ether)();
+        weth.approve(address(ethJoin), 1 ether);
+        ethJoin.join(address(this), 1 ether);
+        vat.frob("ETH", address(this), address(this), address(this), 1 ether, 50 ether);
+        uint cdp = this.open(address(manager), "ETH");
+
+        assertEq(ink("ETH", manager.urns(cdp)), 0);
+        assertEq(art("ETH", manager.urns(cdp)), 0);
+        assertEq(ink("ETH", address(this)), 1 ether);
+        assertEq(art("ETH", address(this)), 50 ether);
+
+        vat.hope(address(manager));
+        manager.urnAllow(address(proxy), 1);
+        this.enter(address(manager), address(this), cdp);
+
+        assertEq(ink("ETH", manager.urns(cdp)), 1 ether);
+        assertEq(art("ETH", manager.urns(cdp)), 50 ether);
+        assertEq(ink("ETH", address(this)), 0);
+        assertEq(art("ETH", address(this)), 0);
+    }
+
+    function testShift() public {
+        uint cdpSrc = this.open(address(manager), "ETH");
+        this.lockETHAndDraw.value(1 ether)(address(manager), address(jug), address(ethJoin), address(daiJoin), cdpSrc, 50 ether);
+
+        uint cdpDst = this.open(address(manager), "ETH");
+
+        assertEq(ink("ETH", manager.urns(cdpSrc)), 1 ether);
+        assertEq(art("ETH", manager.urns(cdpSrc)), 50 ether);
+        assertEq(ink("ETH", manager.urns(cdpDst)), 0);
+        assertEq(art("ETH", manager.urns(cdpDst)), 0);
+
+        this.shift(address(manager), cdpSrc, cdpDst);
+
+        assertEq(ink("ETH", manager.urns(cdpSrc)), 0);
+        assertEq(art("ETH", manager.urns(cdpSrc)), 0);
+        assertEq(ink("ETH", manager.urns(cdpDst)), 1 ether);
+        assertEq(art("ETH", manager.urns(cdpDst)), 50 ether);
     }
 
     function testDSRSimpleCase() public {
