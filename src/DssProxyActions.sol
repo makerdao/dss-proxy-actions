@@ -9,6 +9,7 @@ contract GemLike {
 }
 
 contract ManagerLike {
+    function cdpCan(address, uint, address) public view returns (uint);
     function ilks(uint) public view returns (bytes32);
     function owns(uint) public view returns (address);
     function urns(uint) public view returns (address);
@@ -367,9 +368,10 @@ contract DssProxyActions {
     function safeLockETH(
         address manager,
         address ethJoin,
-        uint cdp
+        uint cdp,
+        address owner
     ) public payable {
-        require(ManagerLike(manager).owns(cdp) == address(this), "cdp-not-owned");
+        require(ManagerLike(manager).owns(cdp) == owner, "owner-missmatch");
         lockETH(manager, ethJoin, cdp);
     }
 
@@ -398,9 +400,10 @@ contract DssProxyActions {
         address gemJoin,
         uint cdp,
         uint wad,
-        bool transferFrom
+        bool transferFrom,
+        address owner
     ) public {
-        require(ManagerLike(manager).owns(cdp) == address(this), "cdp-not-owned");
+        require(ManagerLike(manager).owns(cdp) == owner, "owner-missmatch");
         lockGem(manager, gemJoin, cdp, wad, transferFrom);
     }
 
@@ -466,33 +469,36 @@ contract DssProxyActions {
         address urn = ManagerLike(manager).urns(cdp);
         bytes32 ilk = ManagerLike(manager).ilks(cdp);
 
-        // Joins DAI amount into the vat
-        daiJoin_join(daiJoin, address(this), wad);
-        // Paybacks debt to the CDP
-        VatLike(vat).frob(
-            ilk,
-            urn,
-            address(this),
-            address(this),
-            0,
-            _getWipeDart(vat, wad * ONE, urn, ilk)
-        );
+        address own = ManagerLike(manager).owns(cdp);
+        if (own == address(this) || ManagerLike(manager).cdpCan(own, cdp, address(this)) == 1) {
+            // Joins DAI amount into the vat
+            daiJoin_join(daiJoin, urn, wad);
+            // Paybacks debt to the CDP
+            frob(manager, cdp, 0, _getWipeDart(vat, VatLike(vat).dai(urn), urn, ilk));
+        } else {
+             // Joins DAI amount into the vat
+            daiJoin_join(daiJoin, address(this), wad);
+            // Paybacks debt to the CDP
+            VatLike(vat).frob(
+                ilk,
+                urn,
+                address(this),
+                address(this),
+                0,
+                _getWipeDart(vat, wad * ONE, urn, ilk)
+            );
+        }
     }
 
     function safeWipe(
         address manager,
         address daiJoin,
         uint cdp,
-        uint wad
+        uint wad,
+        address owner
     ) public {
-        address vat = ManagerLike(manager).vat();
-        address urn = ManagerLike(manager).urns(cdp);
-        bytes32 ilk = ManagerLike(manager).ilks(cdp);
-
-        // Joins DAI amount into the vat
-        daiJoin_join(daiJoin, urn, wad);
-        // Paybacks debt to the CDP
-        frob(manager, cdp, 0, _getWipeDart(vat, VatLike(vat).dai(urn), urn, ilk));
+        require(ManagerLike(manager).owns(cdp) == owner, "owner-missmatch");
+        wipe(manager, daiJoin, cdp, wad);
     }
 
     function wipeAll(
@@ -505,33 +511,35 @@ contract DssProxyActions {
         bytes32 ilk = ManagerLike(manager).ilks(cdp);
         (, uint art) = VatLike(vat).urns(ilk, urn);
 
-        // Joins DAI amount into the vat
-        daiJoin_join(daiJoin, address(this), _getWipeAllWad(vat, address(this), urn, ilk));
-        // Paybacks debt to the CDP
-        VatLike(vat).frob(
-            ilk,
-            urn,
-            address(this),
-            address(this),
-            0,
-            -int(art)
-        );
+        address own = ManagerLike(manager).owns(cdp);
+        if (own == address(this) || ManagerLike(manager).cdpCan(own, cdp, address(this)) == 1) {
+            // Joins DAI amount into the vat
+            daiJoin_join(daiJoin, urn, _getWipeAllWad(vat, urn, urn, ilk));
+            // Paybacks debt to the CDP
+            frob(manager, cdp, 0, -int(art));
+        } else {
+            // Joins DAI amount into the vat
+            daiJoin_join(daiJoin, address(this), _getWipeAllWad(vat, address(this), urn, ilk));
+            // Paybacks debt to the CDP
+            VatLike(vat).frob(
+                ilk,
+                urn,
+                address(this),
+                address(this),
+                0,
+                -int(art)
+            );
+        }
     }
 
     function safeWipeAll(
         address manager,
         address daiJoin,
-        uint cdp
+        uint cdp,
+        address owner
     ) public {
-        address vat = ManagerLike(manager).vat();
-        address urn = ManagerLike(manager).urns(cdp);
-        bytes32 ilk = ManagerLike(manager).ilks(cdp);
-        (, uint art) = VatLike(vat).urns(ilk, urn);
-
-        // Joins DAI amount into the vat
-        daiJoin_join(daiJoin, urn, _getWipeAllWad(vat, urn, urn, ilk));
-        // Paybacks debt to the CDP
-        frob(manager, cdp, 0, -int(art));
+        require(ManagerLike(manager).owns(cdp) == owner, "owner-missmatch");
+        wipeAll(manager, daiJoin, cdp);
     }
 
     function lockETHAndDraw(

@@ -29,11 +29,11 @@ https://github.com/makerdao/dss-proxy-actions
 
 `lockETH(address manager, address ethJoin, uint cdp)`: deposits `msg.value` amount of ETH in `ethJoin` adapter and executes `frob` to `cdp` increasing the locked value.
 
-`safeLockETH(address manager, address ethJoin, uint cdp)`: same than `lockETH` but requiring `this == cdp owner`.
+`safeLockETH(address manager, address ethJoin, uint cdp, address owner)`: same than `lockETH` but requiring `owner == cdp owner`.
 
 `lockGem(address manager, address gemJoin, uint cdp, uint wad, bool transferFrom)`: deposits `wad` amount of collateral in `gemJoin` adapter and executes `frob` to `cdp` increasing the locked value. Gets funds from `msg.sender` if `transferFrom == true`.
 
-`safeLockGem(address manager, address gemJoin, uint cdp, uint wad, bool transferFrom)`: same than `lockGem` but requiring `this == cdp owner`.
+`safeLockGem(address manager, address gemJoin, uint cdp, uint wad, bool transferFrom, address owner)`: same than `lockGem` but requiring `owner == cdp owner`.
 
 `freeETH(address manager, address ethJoin, uint cdp, uint wad)`: executes `frob` to `cdp` decreasing locked collateral and withdraws `wad` amount of ETH from `ethJoin` adapter.
 
@@ -43,11 +43,11 @@ https://github.com/makerdao/dss-proxy-actions
 
 `wipe(address manager, address daiJoin, uint cdp, uint wad)`: joins `wad` amount of DAI token to `daiJoin` adapter (burning it) and executes `frob` to `cdp` for decreasing debt.
 
-`safeWipe(address manager, address daiJoin, uint cdp, uint wad)`: same than `wipe` but requiring `this == cdp owner` and in some cases has a better management of dust in the `urn` of the `cdp`.
+`safeWipe(address manager, address daiJoin, uint cdp, uint wad, address owner)`: same than `wipe` but requiring `owner == cdp owner`.
 
 `wipeAll(address manager, address daiJoin, uint cdp)`: joins all the necessary amount of DAI token to `daiJoin` adapter (burning it) and executes `frob` to `cdp` setting the debt to zero.
 
-`safeWipeAll(address manager, address daiJoin, uint cdp)`: same than `wipeAll` but requiring `this == cdp owner` and in some cases has a better management of dust in the `urn` of the `cdp`.
+`safeWipeAll(address manager, address daiJoin, uint cdp, address owner)`: same than `wipeAll` but requiring `owner == cdp owner`.
 
 `lockETHAndDraw(address manager, address jug, address ethJoin, address daiJoin, uint cdp, uint wadD)`: combines `lockETH` and `draw`.
 
