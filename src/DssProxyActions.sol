@@ -62,6 +62,14 @@ contract HopeLike {
     function nope(address) public;
 }
 
+contract EndLike {
+    function fix(bytes32) public view returns (uint);
+    function cash(bytes32, uint) public;
+    function free(bytes32) public;
+    function pack(uint) public;
+    function skim(bytes32, address) public;
+}
+
 contract JugLike {
     function drip(bytes32) public;
 }
@@ -88,7 +96,7 @@ contract ProxyLike {
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 contract DssProxyActions {
-    uint256 constant ONE = 10 ** 27;
+    uint256 constant RAY = 10 ** 27;
 
     // Internal functions
 
@@ -130,11 +138,11 @@ contract DssProxyActions {
         uint dai = VatLike(vat).dai(urn);
 
         // If there was already enough DAI in the vat balance, just exits it without adding more debt
-        if (dai < mul(wad, ONE)) {
+        if (dai < mul(wad, RAY)) {
             // Calculates the needed dart so together with the existing dai in the vat is enough to exit wad amount of DAI tokens
-            dart = toInt(sub(mul(wad, ONE), dai) / rate);
+            dart = toInt(sub(mul(wad, RAY), dai) / rate);
             // This is neeeded due lack of precision. It might need to sum an extra dart wei (for the given DAI wad amount)
-            dart = mul(uint(dart), rate) < mul(wad, ONE) ? dart + 1 : dart;
+            dart = mul(uint(dart), rate) < mul(wad, RAY) ? dart + 1 : dart;
         }
     }
 
@@ -169,10 +177,36 @@ contract DssProxyActions {
         uint dai = VatLike(vat).dai(usr);
 
         uint rad = sub(mul(art, rate), dai);
-        wad = rad / ONE;
+        wad = rad / RAY;
 
         // If the rad precision has some dust, it will need to request for 1 extra wad wei
-        wad = mul(wad, ONE) < rad ? wad + 1 : wad;
+        wad = mul(wad, RAY) < rad ? wad + 1 : wad;
+    }
+
+    function _endFree(
+        address manager,
+        address end,
+        uint cdp
+    ) internal returns (uint ink) {
+        bytes32 ilk = ManagerLike(manager).ilks(cdp);
+        address urn = ManagerLike(manager).urns(cdp);
+        VatLike vat = VatLike(ManagerLike(manager).vat());
+        uint art;
+        (ink, art) = vat.urns(ilk, urn);
+
+        // If CDP still has debt, it needs to be paid
+        if (art > 0) {
+            EndLike(end).skim(ilk, urn);
+            (ink,) = vat.urns(ilk, urn);
+        }
+        // Approves the manager to transfer the position to proxy's address in the vat
+        if (vat.can(address(this), address(manager)) == 0) {
+            vat.hope(manager);
+        }
+        // Transfers position from CDP to the proxy address
+        quit(manager, cdp, address(this));
+        // Frees the position and recovers the collateral in the vat registry
+        EndLike(end).free(ilk);
     }
 
     // Public functions
@@ -485,7 +519,7 @@ contract DssProxyActions {
                 address(this),
                 address(this),
                 0,
-                _getWipeDart(vat, wad * ONE, urn, ilk)
+                _getWipeDart(vat, wad * RAY, urn, ilk)
             );
         }
     }
@@ -749,6 +783,73 @@ contract DssProxyActions {
         GemJoinLike(gemJoin).exit(msg.sender, wadC);
     }
 
+    function endFreeETH(
+        address manager,
+        address ethJoin,
+        address end,
+        uint cdp
+    ) public {
+        uint wad = _endFree(manager, end, cdp);
+        // Exits WETH amount to proxy address as a token
+        GemJoinLike(ethJoin).exit(address(this), wad);
+        // Converts WETH to ETH
+        GemJoinLike(ethJoin).gem().withdraw(wad);
+        // Sends ETH back to the user's wallet
+        msg.sender.transfer(wad);
+    }
+
+    function endFreeGem(
+        address manager,
+        address gemJoin,
+        address end,
+        uint cdp
+    ) public {
+        uint wad = _endFree(manager, end, cdp);
+        // Exits token amount to the user's wallet as a token
+        GemJoinLike(gemJoin).exit(msg.sender, wad);
+    }
+
+    function endPack(
+        address daiJoin,
+        address end,
+        uint wad
+    ) public {
+        daiJoin_join(daiJoin, address(this), wad);
+        VatLike vat = DaiJoinLike(daiJoin).vat();
+        // Approves the end to take out DAI from the proxy's balance in the vat
+        if (vat.can(address(this), address(end)) == 0) {
+            vat.hope(end);
+        }
+        EndLike(end).pack(wad);
+    }
+
+    function endCashETH(
+        address ethJoin,
+        address end,
+        bytes32 ilk,
+        uint wad
+    ) public {
+        EndLike(end).cash(ilk, wad);
+        uint wadC = mul(wad, EndLike(end).fix(ilk)) / RAY;
+        // Exits WETH amount to proxy address as a token
+        GemJoinLike(ethJoin).exit(address(this), wadC);
+        // Converts WETH to ETH
+        GemJoinLike(ethJoin).gem().withdraw(wadC);
+        // Sends ETH back to the user's wallet
+        msg.sender.transfer(wadC);
+    }
+
+    function endCashGem(
+        address gemJoin,
+        address end,
+        bytes32 ilk,
+        uint wad
+    ) public {
+        EndLike(end).cash(ilk, wad);
+        // Exits token amount to the user's wallet as a token
+        GemJoinLike(gemJoin).exit(msg.sender, mul(wad, EndLike(end).fix(ilk)) / RAY);
+    }
+
     function dsrJoin(
         address daiJoin,
         address pot,
@@ -764,7 +865,7 @@ contract DssProxyActions {
             vat.hope(pot);
         }
         // Joins the pie value (equivalent to the DAI wad amount) in the pot
-        PotLike(pot).join(mul(wad, ONE) / PotLike(pot).chi());
+        PotLike(pot).join(mul(wad, RAY) / PotLike(pot).chi());
     }
 
     function dsrExit(
@@ -776,7 +877,7 @@ contract DssProxyActions {
         // Executes drip to count the savings accumulated until this moment
         PotLike(pot).drip();
         // Calculates the pie value in the pot equivalent to the DAI wad amount
-        uint pie = mul(wad, ONE) / PotLike(pot).chi();
+        uint pie = mul(wad, RAY) / PotLike(pot).chi();
         // Exits DAI from the pot
         PotLike(pot).exit(pie);
         // Checks the actual balance of DAI in the vat after the pot exit
@@ -789,7 +890,7 @@ contract DssProxyActions {
         // Otherwise it will do the maximum DAI balance in the vat
         DaiJoinLike(daiJoin).exit(
             msg.sender,
-            bal >= mul(wad, ONE) ? wad : bal / ONE
+            bal >= mul(wad, RAY) ? wad : bal / RAY
         );
     }
 
@@ -809,6 +910,6 @@ contract DssProxyActions {
             vat.hope(daiJoin);
         }
         // Exits the DAI amount corresponding to the value of pie
-        DaiJoinLike(daiJoin).exit(msg.sender, mul(PotLike(pot).chi(), pie) / ONE);
+        DaiJoinLike(daiJoin).exit(msg.sender, mul(PotLike(pot).chi(), pie) / RAY);
     }
 }

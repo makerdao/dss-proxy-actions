@@ -65,6 +65,16 @@ https://github.com/makerdao/dss-proxy-actions
 
 `wipeAllAndFreeGem(address manager, address gemJoin, address daiJoin, uint cdp, uint wadC)`: combines `wipeAll` and `freeGem`.
 
+`endFreeETH(address manager, address ethJoin, address end, uint cdp)`: after system is caged, recovers remaining ETH from `cdp` (pays remaining debt if exists).
+
+`endFreeGem(address manager, address gemJoin, address end, uint cdp)`: after system is caged, recovers remaining token from `cdp` (pays remaining debt if exists).
+
+`endPack(address daiJoin, address end, uint wad)`: after system is caged, packs `wad` amount of DAI to be ready for cashing.
+
+`endCashETH(address ethJoin, address end, bytes32 ilk, uint wad)`: after system is caged, cashes `wad` amount of previously packed DAI and returns the equivalent in ETH.
+
+`endCashGem(address gemJoin, address end, bytes32 ilk, uint wad)`: after system is caged, cashes `wad` amount of previously packed DAI and returns the equivalent in token.
+
 `dsrJoin(address daiJoin, address pot, uint wad)`: joins `wad` amount of DAI token to `daiJoin` adapter (burning it) and moves balance to `pot` for DAI Saving Rates.
 
 `dsrExit(address daiJoin, address pot, uint wad)`: retrieves `wad` amount of DAI from `pot` and exits DAI token from `daiJoin` adapter (minting it).
