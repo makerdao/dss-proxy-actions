@@ -1,4 +1,4 @@
-pragma solidity >=0.5.0;
+pragma solidity 0.5.11;
 
 contract GemLike {
     function approve(address, uint) public;
