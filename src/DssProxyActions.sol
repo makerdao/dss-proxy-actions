@@ -95,7 +95,7 @@ contract ProxyLike {
 // WARNING: These functions meant to be used as a a library for a DSProxy. Some are unsafe if you call them directly.
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-contract DssProxyActions {
+contract Common {
     uint256 constant RAY = 10 ** 27;
 
     // Internal functions
@@ -103,6 +103,21 @@ contract DssProxyActions {
     function mul(uint x, uint y) internal pure returns (uint z) {
         require(y == 0 || (z = x * y) / y == x, "mul-overflow");
     }
+
+    // Public functions
+
+    function daiJoin_join(address apt, address urn, uint wad) public {
+        // Gets DAI from the user's wallet
+        DaiJoinLike(apt).dai().transferFrom(msg.sender, address(this), wad);
+        // Approves adapter to take the DAI amount
+        DaiJoinLike(apt).dai().approve(apt, wad);
+        // Joins DAI into the vat
+        DaiJoinLike(apt).join(urn, wad);
+    }
+}
+
+contract DssProxyActions is Common {
+    // Internal functions
 
     function sub(uint x, uint y) internal pure returns (uint z) {
         require((z = x - y) <= x, "sub-overflow");
@@ -183,32 +198,6 @@ contract DssProxyActions {
         wad = mul(wad, RAY) < rad ? wad + 1 : wad;
     }
 
-    function _endFree(
-        address manager,
-        address end,
-        uint cdp
-    ) internal returns (uint ink) {
-        bytes32 ilk = ManagerLike(manager).ilks(cdp);
-        address urn = ManagerLike(manager).urns(cdp);
-        VatLike vat = VatLike(ManagerLike(manager).vat());
-        uint art;
-        (ink, art) = vat.urns(ilk, urn);
-
-        // If CDP still has debt, it needs to be paid
-        if (art > 0) {
-            EndLike(end).skim(ilk, urn);
-            (ink,) = vat.urns(ilk, urn);
-        }
-        // Approves the manager to transfer the position to proxy's address in the vat
-        if (vat.can(address(this), address(manager)) == 0) {
-            vat.hope(manager);
-        }
-        // Transfers position from CDP to the proxy address
-        quit(manager, cdp, address(this));
-        // Frees the position and recovers the collateral in the vat registry
-        EndLike(end).free(ilk);
-    }
-
     // Public functions
 
     function transfer(address gem, address dst, uint wad) public {
@@ -234,15 +223,6 @@ contract DssProxyActions {
         }
         // Joins token collateral into the vat
         GemJoinLike(apt).join(urn, wad);
-    }
-
-    function daiJoin_join(address apt, address urn, uint wad) public {
-        // Gets DAI from the user's wallet
-        DaiJoinLike(apt).dai().transferFrom(msg.sender, address(this), wad);
-        // Approves adapter to take the DAI amount
-        DaiJoinLike(apt).dai().approve(apt, wad);
-        // Joins DAI into the vat
-        DaiJoinLike(apt).join(urn, wad);
     }
 
     function hope(
@@ -782,14 +762,45 @@ contract DssProxyActions {
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, wadC);
     }
+}
 
-    function endFreeETH(
+contract DssProxyActionsEnd is Common {
+    // Internal functions
+
+    function _free(
+        address manager,
+        address end,
+        uint cdp
+    ) internal returns (uint ink) {
+        bytes32 ilk = ManagerLike(manager).ilks(cdp);
+        address urn = ManagerLike(manager).urns(cdp);
+        VatLike vat = VatLike(ManagerLike(manager).vat());
+        uint art;
+        (ink, art) = vat.urns(ilk, urn);
+
+        // If CDP still has debt, it needs to be paid
+        if (art > 0) {
+            EndLike(end).skim(ilk, urn);
+            (ink,) = vat.urns(ilk, urn);
+        }
+        // Approves the manager to transfer the position to proxy's address in the vat
+        if (vat.can(address(this), address(manager)) == 0) {
+            vat.hope(manager);
+        }
+        // Transfers position from CDP to the proxy address
+        ManagerLike(manager).quit(cdp, address(this));
+        // Frees the position and recovers the collateral in the vat registry
+        EndLike(end).free(ilk);
+    }
+
+    // Public functions
+    function freeETH(
         address manager,
         address ethJoin,
         address end,
         uint cdp
     ) public {
-        uint wad = _endFree(manager, end, cdp);
+        uint wad = _free(manager, end, cdp);
         // Exits WETH amount to proxy address as a token
         GemJoinLike(ethJoin).exit(address(this), wad);
         // Converts WETH to ETH
@@ -798,18 +809,18 @@ contract DssProxyActions {
         msg.sender.transfer(wad);
     }
 
-    function endFreeGem(
+    function freeGem(
         address manager,
         address gemJoin,
         address end,
         uint cdp
     ) public {
-        uint wad = _endFree(manager, end, cdp);
+        uint wad = _free(manager, end, cdp);
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, wad);
     }
 
-    function endPack(
+    function pack(
         address daiJoin,
         address end,
         uint wad
@@ -823,7 +834,7 @@ contract DssProxyActions {
         EndLike(end).pack(wad);
     }
 
-    function endCashETH(
+    function cashETH(
         address ethJoin,
         address end,
         bytes32 ilk,
@@ -839,7 +850,7 @@ contract DssProxyActions {
         msg.sender.transfer(wadC);
     }
 
-    function endCashGem(
+    function cashGem(
         address gemJoin,
         address end,
         bytes32 ilk,
@@ -849,8 +860,10 @@ contract DssProxyActions {
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, mul(wad, EndLike(end).fix(ilk)) / RAY);
     }
+}
 
-    function dsrJoin(
+contract DssProxyActionsDsr is Common {
+    function join(
         address daiJoin,
         address pot,
         uint wad
@@ -868,7 +881,7 @@ contract DssProxyActions {
         PotLike(pot).join(mul(wad, RAY) / PotLike(pot).chi());
     }
 
-    function dsrExit(
+    function exit(
         address daiJoin,
         address pot,
         uint wad
@@ -894,7 +907,7 @@ contract DssProxyActions {
         );
     }
 
-    function dsrExitAll(
+    function exitAll(
         address daiJoin,
         address pot
     ) public {

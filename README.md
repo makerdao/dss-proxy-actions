@@ -3,6 +3,8 @@ Proxy functions to be used via ds-proxy. These functions are based on `dss-cdp-m
 
 https://github.com/makerdao/dss-proxy-actions
 
+## DssProxyActions
+
 `open(address manager, bytes32 ilk)`: creates an `UrnHandler` (`cdp`) for the caller (for a specific `ilk`) and allows to manage it via the internal registry of the `manager`.
 
 `give(address manager, uint cdp, address usr)`: transfers the ownership of `cdp` to `usr` address in the `manager` registry.
@@ -65,20 +67,24 @@ https://github.com/makerdao/dss-proxy-actions
 
 `wipeAllAndFreeGem(address manager, address gemJoin, address daiJoin, uint cdp, uint wadC)`: combines `wipeAll` and `freeGem`.
 
-`endFreeETH(address manager, address ethJoin, address end, uint cdp)`: after system is caged, recovers remaining ETH from `cdp` (pays remaining debt if exists).
-
-`endFreeGem(address manager, address gemJoin, address end, uint cdp)`: after system is caged, recovers remaining token from `cdp` (pays remaining debt if exists).
-
-`endPack(address daiJoin, address end, uint wad)`: after system is caged, packs `wad` amount of DAI to be ready for cashing.
-
-`endCashETH(address ethJoin, address end, bytes32 ilk, uint wad)`: after system is caged, cashes `wad` amount of previously packed DAI and returns the equivalent in ETH.
-
-`endCashGem(address gemJoin, address end, bytes32 ilk, uint wad)`: after system is caged, cashes `wad` amount of previously packed DAI and returns the equivalent in token.
-
-`dsrJoin(address daiJoin, address pot, uint wad)`: joins `wad` amount of DAI token to `daiJoin` adapter (burning it) and moves balance to `pot` for DAI Saving Rates.
-
-`dsrExit(address daiJoin, address pot, uint wad)`: retrieves `wad` amount of DAI from `pot` and exits DAI token from `daiJoin` adapter (minting it).
-
-`dsrExitAll(address daiJoin, address pot)`: same than `dsrExit` but all the available amount.
-
 `openLockGNTAndDraw(address manager, address jug, address gntJoin, address daiJoin, bytes32 ilk, uint wadC, uint wadD)`: like `openLockGemAndDraw` but specially for GNT token.
+
+## DssProxyActionsEnd
+
+`freeETH(address manager, address ethJoin, address end, uint cdp)`: after system is caged, recovers remaining ETH from `cdp` (pays remaining debt if exists).
+
+`freeGem(address manager, address gemJoin, address end, uint cdp)`: after system is caged, recovers remaining token from `cdp` (pays remaining debt if exists).
+
+`pack(address daiJoin, address end, uint wad)`: after system is caged, packs `wad` amount of DAI to be ready for cashing.
+
+`cashETH(address ethJoin, address end, bytes32 ilk, uint wad)`: after system is caged, cashes `wad` amount of previously packed DAI and returns the equivalent in ETH.
+
+`cashGem(address gemJoin, address end, bytes32 ilk, uint wad)`: after system is caged, cashes `wad` amount of previously packed DAI and returns the equivalent in token.
+
+## DssProxyActionsDsr
+
+`join(address daiJoin, address pot, uint wad)`: joins `wad` amount of DAI token to `daiJoin` adapter (burning it) and moves balance to `pot` for DAI Saving Rates.
+
+`exit(address daiJoin, address pot, uint wad)`: retrieves `wad` amount of DAI from `pot` and exits DAI token from `daiJoin` adapter (minting it).
+
+`exitAll(address daiJoin, address pot)`: same than `exit` but all the available amount.

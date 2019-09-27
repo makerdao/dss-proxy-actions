@@ -15,6 +15,8 @@ import {ProxyRegistry, DSProxyFactory, DSProxy} from "proxy-registry/ProxyRegist
 contract ProxyCalls {
     DSProxy proxy;
     address dssProxyActions;
+    address dssProxyActionsEnd;
+    address dssProxyActionsDsr;
 
     function transfer(address, address, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
@@ -207,36 +209,36 @@ contract ProxyCalls {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function endFreeETH(address, address, address, uint) public {
-        proxy.execute(dssProxyActions, msg.data);
+    function freeETH(address, address, address, uint) public {
+        proxy.execute(dssProxyActionsEnd, msg.data);
     }
 
-    function endFreeGem(address, address, address, uint) public {
-        proxy.execute(dssProxyActions, msg.data);
+    function freeGem(address, address, address, uint) public {
+        proxy.execute(dssProxyActionsEnd, msg.data);
     }
 
-    function endPack(address, address, uint) public {
-        proxy.execute(dssProxyActions, msg.data);
+    function pack(address, address, uint) public {
+        proxy.execute(dssProxyActionsEnd, msg.data);
     }
 
-    function endCashETH(address, address, bytes32, uint) public {
-        proxy.execute(dssProxyActions, msg.data);
+    function cashETH(address, address, bytes32, uint) public {
+        proxy.execute(dssProxyActionsEnd, msg.data);
     }
 
-    function endCashGem(address, address, bytes32, uint) public {
-        proxy.execute(dssProxyActions, msg.data);
+    function cashGem(address, address, bytes32, uint) public {
+        proxy.execute(dssProxyActionsEnd, msg.data);
     }
 
-    function dsrJoin(address, address, uint) public {
-        proxy.execute(dssProxyActions, msg.data);
+    function join(address, address, uint) public {
+        proxy.execute(dssProxyActionsDsr, msg.data);
     }
 
-    function dsrExit(address, address, uint) public {
-        proxy.execute(dssProxyActions, msg.data);
+    function exit(address, address, uint) public {
+        proxy.execute(dssProxyActionsDsr, msg.data);
     }
 
-    function dsrExitAll(address, address) public {
-        proxy.execute(dssProxyActions, msg.data);
+    function exitAll(address, address) public {
+        proxy.execute(dssProxyActionsDsr, msg.data);
     }
 }
 
@@ -292,6 +294,8 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         DSProxyFactory factory = new DSProxyFactory();
         registry = new ProxyRegistry(address(factory));
         dssProxyActions = address(new DssProxyActions());
+        dssProxyActionsEnd = address(new DssProxyActionsEnd());
+        dssProxyActionsDsr = address(new DssProxyActionsDsr());
         proxy = DSProxy(registry.build());
     }
 
@@ -968,7 +972,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(art, 5 ether);
 
         uint prevBalanceETH = address(this).balance;
-        this.endFreeETH(address(manager), address(ethJoin), address(end), cdp);
+        this.freeETH(address(manager), address(ethJoin), address(end), cdp);
         (ink, art) = vat.urns("ETH", manager.urns(cdp));
         assertEq(ink, 0);
         assertEq(art, 0);
@@ -976,7 +980,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(address(this).balance, prevBalanceETH + remainInkVal);
 
         uint prevBalanceCol = col.balanceOf(address(this));
-        this.endFreeGem(address(manager), address(colJoin), address(end), cdp2);
+        this.freeGem(address(manager), address(colJoin), address(end), cdp2);
         (ink, art) = vat.urns("COL", manager.urns(cdp2));
         assertEq(ink, 0);
         assertEq(art, 0);
@@ -989,10 +993,10 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         end.flow("COL");
 
         dai.approve(address(proxy), 305 ether);
-        this.endPack(address(daiJoin), address(end), 305 ether);
+        this.pack(address(daiJoin), address(end), 305 ether);
 
-        this.endCashETH(address(ethJoin), address(end), "ETH", 305 ether);
-        this.endCashGem(address(colJoin), address(end), "COL", 305 ether);
+        this.cashETH(address(ethJoin), address(end), "ETH", 305 ether);
+        this.cashGem(address(colJoin), address(end), "COL", 305 ether);
 
         assertEq(address(this).balance, prevBalanceETH + 2 ether - 1); // (-1 rounding)
         assertEq(col.balanceOf(address(this)), prevBalanceCol + 1 ether - 1); // (-1 rounding)
@@ -1007,14 +1011,14 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         dai.approve(address(proxy), 50 ether);
         assertEq(dai.balanceOf(address(this)), 50 ether);
         assertEq(pot.pie(address(this)), 0 ether);
-        this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in dsrExit
-        this.dsrJoin(address(daiJoin), address(pot), 50 ether);
+        this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in exit
+        this.join(address(daiJoin), address(pot), 50 ether);
         assertEq(dai.balanceOf(address(this)), 0 ether);
         assertEq(pot.pie(address(proxy)) * pot.chi(), 50 ether * ONE);
         hevm.warp(initialTime + 1); // Moved 1 second
         pot.drip();
         assertEq(pot.pie(address(proxy)) * pot.chi(), 52.5 ether * ONE); // Now the equivalent DAI amount is 2.5 DAI extra
-        this.dsrExit(address(daiJoin), address(pot), 52.5 ether);
+        this.exit(address(daiJoin), address(pot), 52.5 ether);
         assertEq(dai.balanceOf(address(this)), 52.5 ether);
         assertEq(pot.pie(address(proxy)), 0);
     }
@@ -1028,15 +1032,15 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         dai.approve(address(proxy), 50 ether);
         assertEq(dai.balanceOf(address(this)), 50 ether);
         assertEq(pot.pie(address(this)), 0 ether);
-        this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in dsrExit
-        this.dsrJoin(address(daiJoin), address(pot), 50 ether);
+        this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in exit
+        this.join(address(daiJoin), address(pot), 50 ether);
         assertEq(dai.balanceOf(address(this)), 0 ether);
         // Due rounding the DAI equivalent is not the same than initial wad amount
         assertEq(pot.pie(address(proxy)) * pot.chi(), 49999999999999999999350000000000000000000000000);
         hevm.warp(initialTime + 1);
         pot.drip(); // Just necessary to check in this test the updated value of chi
         assertEq(pot.pie(address(proxy)) * pot.chi(), 52499999999999999999317500000000000000000000000);
-        this.dsrExit(address(daiJoin), address(pot), 52.5 ether);
+        this.exit(address(daiJoin), address(pot), 52.5 ether);
         assertEq(dai.balanceOf(address(this)), 52499999999999999999);
         assertEq(pot.pie(address(proxy)), 0);
     }
@@ -1050,11 +1054,11 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         dai.approve(address(proxy), 50 ether);
         assertEq(dai.balanceOf(address(this)), 50 ether);
         assertEq(pot.pie(address(this)), 0 ether);
-        this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in dsrExit
-        this.dsrJoin(address(daiJoin), address(pot), 50 ether);
+        this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in exit
+        this.join(address(daiJoin), address(pot), 50 ether);
         assertEq(pot.pie(address(proxy)) * pot.chi(), 49999999999999999999993075745400000000000000000);
         assertEq(vat.dai(address(proxy)), mul(50 ether, ONE) - 49999999999999999999993075745400000000000000000);
-        this.dsrExit(address(daiJoin), address(pot), 50 ether);
+        this.exit(address(daiJoin), address(pot), 50 ether);
         // In this case we get the full 50 DAI back as we also use (for the exit) the dust that remained in the proxy DAI balance in the vat
         // The proxy function tries to return the wad amount if there is enough balance to do it
         assertEq(dai.balanceOf(address(this)), 50 ether);
@@ -1066,10 +1070,10 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         hevm.warp(initialTime);
         uint cdp = this.open(address(manager), "ETH");
         this.lockETHAndDraw.value(1 ether)(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
-        this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in dsrExitAll
+        this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in exitAll
         dai.approve(address(proxy), 50 ether);
-        this.dsrJoin(address(daiJoin), address(pot), 50 ether);
-        this.dsrExitAll(address(daiJoin), address(pot));
+        this.join(address(daiJoin), address(pot), 50 ether);
+        this.exitAll(address(daiJoin), address(pot));
         // In this case we get 49.999 DAI back as the returned amount is based purely in the pie amount
         assertEq(dai.balanceOf(address(this)), 49999999999999999999);
     }
