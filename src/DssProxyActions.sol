@@ -213,7 +213,7 @@ contract DssProxyActions is Common {
         GemJoinLike(apt).join(urn, msg.value);
     }
 
-    function gemJoin_join(address apt, address urn, uint wad, bool transferFrom) public payable {
+    function gemJoin_join(address apt, address urn, uint wad, bool transferFrom) public {
         // Only executes for tokens that have approval/transferFrom implementation
         if (transferFrom) {
             // Gets token from the user's wallet
