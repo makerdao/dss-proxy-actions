@@ -960,8 +960,8 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         uint cdp2 = this.openLockGemAndDraw(address(manager), address(jug), address(colJoin), address(daiJoin), "COL", 1 ether, 5 ether, true);
 
         this.cage(address(end));
-        this.cage(address(end), "ETH");
-        this.cage(address(end), "COL");
+        end.cage("ETH");
+        end.cage("COL");
 
         (uint ink, uint art) = vat.urns("ETH", manager.urns(cdp));
         assertEq(ink, 2 ether);
