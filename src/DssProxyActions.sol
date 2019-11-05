@@ -467,7 +467,7 @@ contract DssProxyActions is Common {
         uint wad
     ) public {
         // Moves the amount from the CDP urn to proxy's address
-        flux(manager, cdp, address(this), wad);
+        flux(manager, cdp, address(this), convertTo18(gemJoin, wad));
 
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, wad);

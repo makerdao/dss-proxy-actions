@@ -4,7 +4,7 @@ import "ds-test/test.sol";
 
 import "./DssProxyActions.sol";
 
-import {DssDeployTestBase} from "dss-deploy/DssDeploy.t.base.sol";
+import {DssDeployTestBase, Flipper} from "dss-deploy/DssDeploy.t.base.sol";
 import {DGD, GNT} from "dss-deploy/tokens.sol";
 import {GemJoin3, GemJoin4} from "dss-deploy/join.sol";
 import {DSValue} from "ds-value/value.sol";
@@ -266,6 +266,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     GemJoin3 dgdJoin;
     DGD dgd;
     DSValue pipDGD;
+    Flipper dgdFlip;
     GemJoin4 gntJoin;
     GNT gnt;
     DSValue pipGNT;
@@ -280,6 +281,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         dgdJoin = new GemJoin3(address(vat), "DGD", address(dgd), 9);
         pipDGD = new DSValue();
         dssDeploy.deployCollateral("DGD", address(dgdJoin), address(pipDGD));
+        (dgdFlip, ) = dssDeploy.ilks("DGD");
         pipDGD.poke(bytes32(uint(50 ether))); // Price 50 DAI = 1 DGD (in precision 18)
         this.file(address(spotter), "DGD", "mat", uint(1500000000 ether)); // Liquidation ratio 150%
         this.file(address(vat), bytes32("DGD"), bytes32("line"), uint(10000 * 10 ** 45));
@@ -951,7 +953,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         user2.doDent(address(ethFlip), batchId, 0.7 ether, rad(200 ether));
     }
 
-    function testFlipFreeETH() public {
+    function testExitETHAfterFlip() public {
         uint cdp = _flipETH();
         assertEq(vat.gem("ETH", manager.urns(cdp)), 0.3 ether);
         uint prevBalance = address(this).balance;
@@ -960,14 +962,14 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(address(this).balance, prevBalance + 0.3 ether);
     }
 
-    function testFlipFreeGem() public {
+    function testExitGemAfterFlip() public {
         this.file(address(cat), "COL", "lump", 1 ether); // 1 unit of collateral per batch
         this.file(address(cat), "COL", "chop", ONE);
 
         col.mint(1 ether);
         uint cdp = this.open(address(manager), "COL");
         col.approve(address(proxy), 1 ether);
-        this.lockGemAndDraw(address(manager), address(jug), address(colJoin), address(daiJoin), cdp, 1 ether, 40 ether, true); // Maximun DAI generated
+        this.lockGemAndDraw(address(manager), address(jug), address(colJoin), address(daiJoin), cdp, 1 ether, 40 ether, true);
 
         pipCOL.poke(bytes32(uint(40 * 10 ** 18))); // Force liquidation
         spotter.poke("COL");
@@ -994,7 +996,40 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(col.balanceOf(address(this)), 0.3 ether);
     }
 
-    function testFlipLockBack() public {
+    function testExitDGDAfterFlip() public {
+        this.file(address(cat), "DGD", "lump", 1 ether); // 1 unit of collateral per batch
+        this.file(address(cat), "DGD", "chop", ONE);
+
+        uint cdp = this.open(address(manager), "DGD");
+        dgd.approve(address(proxy), 1 * 10 ** 9);
+        this.lockGemAndDraw(address(manager), address(jug), address(dgdJoin), address(daiJoin), cdp, 1 * 10 ** 9, 30 ether, true);
+
+        pipDGD.poke(bytes32(uint(40 * 10 ** 18))); // Force liquidation
+        spotter.poke("DGD");
+        uint batchId = cat.bite("DGD", manager.urns(cdp));
+
+        address(user1).transfer(10 ether);
+        user1.doEthJoin(address(weth), address(ethJoin), address(user1), 10 ether);
+        user1.doFrob(address(vat), "ETH", address(user1), address(user1), address(user1), 10 ether, 1000 ether);
+
+        address(user2).transfer(10 ether);
+        user2.doEthJoin(address(weth), address(ethJoin), address(user2), 10 ether);
+        user2.doFrob(address(vat), "ETH", address(user2), address(user2), address(user2), 10 ether, 1000 ether);
+
+        user1.doHope(address(vat), address(dgdFlip));
+        user2.doHope(address(vat), address(dgdFlip));
+
+        user1.doTend(address(dgdFlip), batchId, 1 ether, rad(30 ether));
+
+        user2.doDent(address(dgdFlip), batchId, 0.7 ether, rad(30 ether));
+        assertEq(vat.gem("DGD", manager.urns(cdp)), 0.3 ether);
+        uint prevBalance = dgd.balanceOf(address(this));
+        this.exitGem(address(manager), address(dgdJoin), cdp, 0.3 * 10 ** 9);
+        assertEq(vat.gem("DGD", manager.urns(cdp)), 0);
+        assertEq(dgd.balanceOf(address(this)), prevBalance + 0.3 * 10 ** 9);
+    }
+
+    function testLockBackAfterFlip() public {
         uint cdp = _flipETH();
         (uint inkV,) = vat.urns("ETH", manager.urns(cdp));
         assertEq(inkV, 0);
