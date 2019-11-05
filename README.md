@@ -21,8 +21,6 @@ https://github.com/makerdao/dss-proxy-actions
 
 `frob(address manager, uint cdp, int dink, int dart)`: executes `frob` to `cdp` address assigning the collateral freed and/or DAI drawn to the same address.
 
-`frob(address manager, uint cdp, address dst, int dink, int dart)`: executes `frob` to `cdp` address assigning the collateral freed or DAI drawn to `dst` address.
-
 `quit(address manager, uint cdp, address dst)`: moves `cdp` collateral balance and debt to `dst` address.
 
 `enter(address manager, address src, uint cdp)`: moves `src` collateral balance and debt to `cdp`.

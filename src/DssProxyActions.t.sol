@@ -415,40 +415,6 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(dai.balanceOf(address(this)), 60 ether);
     }
 
-    function testFrobDaiOtherDst() public {
-        uint cdp = this.open(address(manager), "ETH");
-
-        weth.deposit.value(1 ether)();
-        weth.approve(address(ethJoin), uint(-1));
-        ethJoin.join(manager.urns(cdp), 1 ether);
-
-        assertEq(vat.dai(manager.urns(cdp)), 0);
-        assertEq(vat.dai(address(this)), 0);
-
-        this.frob(address(manager), cdp, address(this), 0.5 ether, 60 ether);
-        assertEq(vat.dai(manager.urns(cdp)), 0);
-        assertEq(vat.dai(address(this)), mul(ONE, 60 ether));
-    }
-
-    function testFrobGemOtherDst() public {
-        uint cdp = this.open(address(manager), "ETH");
-
-        weth.deposit.value(1 ether)();
-        weth.approve(address(ethJoin), uint(-1));
-        ethJoin.join(manager.urns(cdp), 1 ether);
-
-        assertEq(vat.gem("ETH", manager.urns(cdp)), 1 ether);
-        assertEq(vat.gem("ETH", address(this)), 0);
-
-        this.frob(address(manager), cdp, 0.5 ether, 60 ether);
-        assertEq(vat.gem("ETH", manager.urns(cdp)), 0.5 ether);
-        assertEq(vat.gem("ETH", address(this)), 0);
-
-        this.frob(address(manager), cdp, address(this), -int(0.5 ether), -int(60 ether));
-        assertEq(vat.gem("ETH", manager.urns(cdp)), 0.5 ether);
-        assertEq(vat.gem("ETH", address(this)), 0.5 ether);
-    }
-
     function testLockETH() public {
         uint initialBalance = address(this).balance;
         uint cdp = this.open(address(manager), "ETH");
