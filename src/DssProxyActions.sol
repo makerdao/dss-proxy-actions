@@ -449,6 +449,36 @@ contract DssProxyActions is Common {
         GemJoinLike(gemJoin).exit(msg.sender, wad);
     }
 
+    function exitETH(
+        address manager,
+        address ethJoin,
+        uint cdp,
+        uint wad
+    ) public {
+        // Moves the amount from the CDP urn to proxy's address
+        ManagerLike(manager).flux(cdp, address(this), wad);
+
+        // Exits WETH amount to proxy address as a token
+        GemJoinLike(ethJoin).exit(address(this), wad);
+        // Converts WETH to ETH
+        GemJoinLike(ethJoin).gem().withdraw(wad);
+        // Sends ETH back to the user's wallet
+        msg.sender.transfer(wad);
+    }
+
+    function exitGem(
+        address manager,
+        address gemJoin,
+        uint cdp,
+        uint wad
+    ) public {
+        // Moves the amount from the CDP urn to proxy's address
+        ManagerLike(manager).flux(cdp, address(this), wad);
+
+        // Exits token amount to the user's wallet as a token
+        GemJoinLike(gemJoin).exit(msg.sender, wad);
+    }
+
     function draw(
         address manager,
         address jug,

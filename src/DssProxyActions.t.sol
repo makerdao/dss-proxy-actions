@@ -128,6 +128,14 @@ contract ProxyCalls {
         proxy.execute(dssProxyActions, msg.data);
     }
 
+    function exitETH(address, address, uint, uint) public {
+        proxy.execute(dssProxyActions, msg.data);
+    }
+
+    function exitGem(address, address, uint, uint) public {
+        proxy.execute(dssProxyActions, msg.data);
+    }
+
     function draw(address, address, address, uint, uint) public {
         proxy.execute(dssProxyActions, msg.data);
     }
@@ -209,36 +217,36 @@ contract ProxyCalls {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function freeETH(address, address, address, uint) public {
-        proxy.execute(dssProxyActionsEnd, msg.data);
+    function end_freeETH(address a, address b, address c, uint d) public {
+        proxy.execute(dssProxyActionsEnd, abi.encodeWithSignature("freeETH(address,address,address,uint256)", a, b, c, d));
     }
 
-    function freeGem(address, address, address, uint) public {
-        proxy.execute(dssProxyActionsEnd, msg.data);
+    function end_freeGem(address a, address b, address c, uint d) public {
+        proxy.execute(dssProxyActionsEnd, abi.encodeWithSignature("freeGem(address,address,address,uint256)", a, b, c, d));
     }
 
-    function pack(address, address, uint) public {
-        proxy.execute(dssProxyActionsEnd, msg.data);
+    function end_pack(address a, address b, uint c) public {
+        proxy.execute(dssProxyActionsEnd, abi.encodeWithSignature("pack(address,address,uint256)", a, b, c));
     }
 
-    function cashETH(address, address, bytes32, uint) public {
-        proxy.execute(dssProxyActionsEnd, msg.data);
+    function end_cashETH(address a, address b, bytes32 c, uint d) public {
+        proxy.execute(dssProxyActionsEnd, abi.encodeWithSignature("cashETH(address,address,bytes32,uint256)", a, b, c, d));
     }
 
-    function cashGem(address, address, bytes32, uint) public {
-        proxy.execute(dssProxyActionsEnd, msg.data);
+    function end_cashGem(address a, address b, bytes32 c, uint d) public {
+        proxy.execute(dssProxyActionsEnd, abi.encodeWithSignature("cashGem(address,address,bytes32,uint256)", a, b, c, d));
     }
 
-    function join(address, address, uint) public {
-        proxy.execute(dssProxyActionsDsr, msg.data);
+    function dsr_join(address a, address b, uint c) public {
+        proxy.execute(dssProxyActionsDsr, abi.encodeWithSignature("join(address,address,uint256)", a, b, c));
     }
 
-    function exit(address, address, uint) public {
-        proxy.execute(dssProxyActionsDsr, msg.data);
+    function dsr_exit(address a, address b, uint c) public {
+        proxy.execute(dssProxyActionsDsr, abi.encodeWithSignature("exit(address,address,uint256)", a, b, c));
     }
 
-    function exitAll(address, address) public {
-        proxy.execute(dssProxyActionsDsr, msg.data);
+    function dsr_exitAll(address a, address b) public {
+        proxy.execute(dssProxyActionsDsr, abi.encodeWithSignature("exitAll(address,address)", a, b));
     }
 }
 
@@ -950,6 +958,87 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(art("ETH", manager.urns(cdpDst)), 50 ether);
     }
 
+    function _flipETH() internal returns (uint cdp) {
+        this.file(address(cat), "ETH", "lump", 1 ether); // 1 unit of collateral per batch
+        this.file(address(cat), "ETH", "chop", ONE);
+
+        cdp = this.open(address(manager), "ETH");
+        this.lockETHAndDraw.value(1 ether)(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 200 ether); // Maximun DAI generated
+        pipETH.poke(bytes32(uint(300 * 10 ** 18 - 1))); // Force liquidation
+        spotter.poke("ETH");
+        uint batchId = cat.bite("ETH", manager.urns(cdp));
+
+
+        address(user1).transfer(10 ether);
+        user1.doEthJoin(address(weth), address(ethJoin), address(user1), 10 ether);
+        user1.doFrob(address(vat), "ETH", address(user1), address(user1), address(user1), 10 ether, 1000 ether);
+
+        address(user2).transfer(10 ether);
+        user2.doEthJoin(address(weth), address(ethJoin), address(user2), 10 ether);
+        user2.doFrob(address(vat), "ETH", address(user2), address(user2), address(user2), 10 ether, 1000 ether);
+
+        user1.doHope(address(vat), address(ethFlip));
+        user2.doHope(address(vat), address(ethFlip));
+
+        user1.doTend(address(ethFlip), batchId, 1 ether, rad(200 ether));
+
+        user2.doDent(address(ethFlip), batchId, 0.7 ether, rad(200 ether));
+    }
+
+    function testFlipFreeETH() public {
+        uint cdp = _flipETH();
+        assertEq(vat.gem("ETH", manager.urns(cdp)), 0.3 ether);
+        uint prevBalance = address(this).balance;
+        this.exitETH(address(manager), address(ethJoin), cdp, 0.3 ether);
+        assertEq(vat.gem("ETH", manager.urns(cdp)), 0);
+        assertEq(address(this).balance, prevBalance + 0.3 ether);
+    }
+
+    function testFlipFreeGem() public {
+        this.file(address(cat), "COL", "lump", 1 ether); // 1 unit of collateral per batch
+        this.file(address(cat), "COL", "chop", ONE);
+
+        col.mint(1 ether);
+        uint cdp = this.open(address(manager), "COL");
+        col.approve(address(proxy), 1 ether);
+        this.lockGemAndDraw(address(manager), address(jug), address(colJoin), address(daiJoin), cdp, 1 ether, 40 ether, true); // Maximun DAI generated
+
+        pipCOL.poke(bytes32(uint(40 * 10 ** 18))); // Force liquidation
+        spotter.poke("COL");
+        uint batchId = cat.bite("COL", manager.urns(cdp));
+
+        address(user1).transfer(10 ether);
+        user1.doEthJoin(address(weth), address(ethJoin), address(user1), 10 ether);
+        user1.doFrob(address(vat), "ETH", address(user1), address(user1), address(user1), 10 ether, 1000 ether);
+
+        address(user2).transfer(10 ether);
+        user2.doEthJoin(address(weth), address(ethJoin), address(user2), 10 ether);
+        user2.doFrob(address(vat), "ETH", address(user2), address(user2), address(user2), 10 ether, 1000 ether);
+
+        user1.doHope(address(vat), address(colFlip));
+        user2.doHope(address(vat), address(colFlip));
+
+        user1.doTend(address(colFlip), batchId, 1 ether, rad(40 ether));
+
+        user2.doDent(address(colFlip), batchId, 0.7 ether, rad(40 ether));
+        assertEq(vat.gem("COL", manager.urns(cdp)), 0.3 ether);
+        assertEq(col.balanceOf(address(this)), 0);
+        this.exitGem(address(manager), address(colJoin), cdp, 0.3 ether);
+        assertEq(vat.gem("COL", manager.urns(cdp)), 0);
+        assertEq(col.balanceOf(address(this)), 0.3 ether);
+    }
+
+    function testFlipLockBack() public {
+        uint cdp = _flipETH();
+        (uint inkV,) = vat.urns("ETH", manager.urns(cdp));
+        assertEq(inkV, 0);
+        assertEq(vat.gem("ETH", manager.urns(cdp)), 0.3 ether);
+        this.frob(address(manager), cdp, 0.3 ether, 0);
+        (inkV,) = vat.urns("ETH", manager.urns(cdp));
+        assertEq(inkV, 0.3 ether);
+        assertEq(vat.gem("ETH", manager.urns(cdp)), 0);
+    }
+
     function testEnd() public {
         this.file(address(cat), "ETH", "lump", 1 ether); // 1 unit of collateral per batch
         this.file(address(cat), "ETH", "chop", ONE);
@@ -963,27 +1052,27 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         end.cage("ETH");
         end.cage("COL");
 
-        (uint ink, uint art) = vat.urns("ETH", manager.urns(cdp));
-        assertEq(ink, 2 ether);
-        assertEq(art, 300 ether);
+        (uint inkV, uint artV) = vat.urns("ETH", manager.urns(cdp));
+        assertEq(inkV, 2 ether);
+        assertEq(artV, 300 ether);
 
-        (ink, art) = vat.urns("COL", manager.urns(cdp2));
-        assertEq(ink, 1 ether);
-        assertEq(art, 5 ether);
+        (inkV, artV) = vat.urns("COL", manager.urns(cdp2));
+        assertEq(inkV, 1 ether);
+        assertEq(artV, 5 ether);
 
         uint prevBalanceETH = address(this).balance;
-        this.freeETH(address(manager), address(ethJoin), address(end), cdp);
-        (ink, art) = vat.urns("ETH", manager.urns(cdp));
-        assertEq(ink, 0);
-        assertEq(art, 0);
+        this.end_freeETH(address(manager), address(ethJoin), address(end), cdp);
+        (inkV, artV) = vat.urns("ETH", manager.urns(cdp));
+        assertEq(inkV, 0);
+        assertEq(artV, 0);
         uint remainInkVal = 2 ether - 300 * end.tag("ETH") / 10 ** 9; // 2 ETH (deposited) - 300 DAI debt * ETH cage price
         assertEq(address(this).balance, prevBalanceETH + remainInkVal);
 
         uint prevBalanceCol = col.balanceOf(address(this));
-        this.freeGem(address(manager), address(colJoin), address(end), cdp2);
-        (ink, art) = vat.urns("COL", manager.urns(cdp2));
-        assertEq(ink, 0);
-        assertEq(art, 0);
+        this.end_freeGem(address(manager), address(colJoin), address(end), cdp2);
+        (inkV, artV) = vat.urns("COL", manager.urns(cdp2));
+        assertEq(inkV, 0);
+        assertEq(artV, 0);
         remainInkVal = 1 ether - 5 * end.tag("COL") / 10 ** 9; // 1 COL (deposited) - 5 DAI debt * COL cage price
         assertEq(col.balanceOf(address(this)), prevBalanceCol + remainInkVal);
 
@@ -993,10 +1082,10 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         end.flow("COL");
 
         dai.approve(address(proxy), 305 ether);
-        this.pack(address(daiJoin), address(end), 305 ether);
+        this.end_pack(address(daiJoin), address(end), 305 ether);
 
-        this.cashETH(address(ethJoin), address(end), "ETH", 305 ether);
-        this.cashGem(address(colJoin), address(end), "COL", 305 ether);
+        this.end_cashETH(address(ethJoin), address(end), "ETH", 305 ether);
+        this.end_cashGem(address(colJoin), address(end), "COL", 305 ether);
 
         assertEq(address(this).balance, prevBalanceETH + 2 ether - 1); // (-1 rounding)
         assertEq(col.balanceOf(address(this)), prevBalanceCol + 1 ether - 1); // (-1 rounding)
@@ -1012,13 +1101,13 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(dai.balanceOf(address(this)), 50 ether);
         assertEq(pot.pie(address(this)), 0 ether);
         this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in exit
-        this.join(address(daiJoin), address(pot), 50 ether);
+        this.dsr_join(address(daiJoin), address(pot), 50 ether);
         assertEq(dai.balanceOf(address(this)), 0 ether);
         assertEq(pot.pie(address(proxy)) * pot.chi(), 50 ether * ONE);
         hevm.warp(initialTime + 1); // Moved 1 second
         pot.drip();
         assertEq(pot.pie(address(proxy)) * pot.chi(), 52.5 ether * ONE); // Now the equivalent DAI amount is 2.5 DAI extra
-        this.exit(address(daiJoin), address(pot), 52.5 ether);
+        this.dsr_exit(address(daiJoin), address(pot), 52.5 ether);
         assertEq(dai.balanceOf(address(this)), 52.5 ether);
         assertEq(pot.pie(address(proxy)), 0);
     }
@@ -1033,14 +1122,14 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(dai.balanceOf(address(this)), 50 ether);
         assertEq(pot.pie(address(this)), 0 ether);
         this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in exit
-        this.join(address(daiJoin), address(pot), 50 ether);
+        this.dsr_join(address(daiJoin), address(pot), 50 ether);
         assertEq(dai.balanceOf(address(this)), 0 ether);
         // Due rounding the DAI equivalent is not the same than initial wad amount
         assertEq(pot.pie(address(proxy)) * pot.chi(), 49999999999999999999350000000000000000000000000);
         hevm.warp(initialTime + 1);
         pot.drip(); // Just necessary to check in this test the updated value of chi
         assertEq(pot.pie(address(proxy)) * pot.chi(), 52499999999999999999317500000000000000000000000);
-        this.exit(address(daiJoin), address(pot), 52.5 ether);
+        this.dsr_exit(address(daiJoin), address(pot), 52.5 ether);
         assertEq(dai.balanceOf(address(this)), 52499999999999999999);
         assertEq(pot.pie(address(proxy)), 0);
     }
@@ -1055,10 +1144,10 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(dai.balanceOf(address(this)), 50 ether);
         assertEq(pot.pie(address(this)), 0 ether);
         this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in exit
-        this.join(address(daiJoin), address(pot), 50 ether);
+        this.dsr_join(address(daiJoin), address(pot), 50 ether);
         assertEq(pot.pie(address(proxy)) * pot.chi(), 49999999999999999999993075745400000000000000000);
         assertEq(vat.dai(address(proxy)), mul(50 ether, ONE) - 49999999999999999999993075745400000000000000000);
-        this.exit(address(daiJoin), address(pot), 50 ether);
+        this.dsr_exit(address(daiJoin), address(pot), 50 ether);
         // In this case we get the full 50 DAI back as we also use (for the exit) the dust that remained in the proxy DAI balance in the vat
         // The proxy function tries to return the wad amount if there is enough balance to do it
         assertEq(dai.balanceOf(address(this)), 50 ether);
@@ -1072,8 +1161,8 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.lockETHAndDraw.value(1 ether)(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
         this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in exitAll
         dai.approve(address(proxy), 50 ether);
-        this.join(address(daiJoin), address(pot), 50 ether);
-        this.exitAll(address(daiJoin), address(pot));
+        this.dsr_join(address(daiJoin), address(pot), 50 ether);
+        this.dsr_exitAll(address(daiJoin), address(pot));
         // In this case we get 49.999 DAI back as the returned amount is based purely in the pie amount
         assertEq(dai.balanceOf(address(this)), 49999999999999999999);
     }

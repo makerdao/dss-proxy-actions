@@ -69,6 +69,12 @@ https://github.com/makerdao/dss-proxy-actions
 
 `openLockGNTAndDraw(address manager, address jug, address gntJoin, address daiJoin, bytes32 ilk, uint wadC, uint wadD)`: like `openLockGemAndDraw` but specially for GNT token.
 
+## DssProxyActionsFlip
+
+`exitETH(address manager, address ethJoin, uint cdp, uint wad)`: exits `wad` amount of ETH from `ethJoin` adapter (received in the `cdp` urn after the liquidation auction is over).
+
+`exitGem(address manager, address gemJoin, uint cdp, uint wad)`: exits `wad` amount of collateral from `gemJoin` adapter (received in the `cdp` urn after the liquidation auction is over).
+
 ## DssProxyActionsEnd
 
 `freeETH(address manager, address ethJoin, address end, uint cdp)`: after system is caged, recovers remaining ETH from `cdp` (pays remaining debt if exists).
