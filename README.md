@@ -5,7 +5,7 @@ https://github.com/makerdao/dss-proxy-actions
 
 ## DssProxyActions
 
-`open(address manager, bytes32 ilk)`: creates an `UrnHandler` (`cdp`) for the caller (for a specific `ilk`) and allows to manage it via the internal registry of the `manager`.
+`open(address manager, bytes32 ilk, address usr)`: creates an `UrnHandler` (`cdp`) for the address `usr` (for a specific `ilk`) and allows to manage it via the internal registry of the `manager`.
 
 `give(address manager, uint cdp, address usr)`: transfers the ownership of `cdp` to `usr` address in the `manager` registry.
 

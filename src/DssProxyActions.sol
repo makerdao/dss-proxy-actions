@@ -14,7 +14,7 @@ contract ManagerLike {
     function owns(uint) public view returns (address);
     function urns(uint) public view returns (address);
     function vat() public view returns (address);
-    function open(bytes32) public returns (uint);
+    function open(bytes32, address) public returns (uint);
     function give(uint, address) public;
     function cdpAllow(uint, address, uint) public;
     function urnAllow(address, uint) public;
@@ -240,9 +240,10 @@ contract DssProxyActions is Common {
 
     function open(
         address manager,
-        bytes32 ilk
+        bytes32 ilk,
+        address usr
     ) public returns (uint cdp) {
-        cdp = ManagerLike(manager).open(ilk);
+        cdp = ManagerLike(manager).open(ilk, usr);
     }
 
     function give(
@@ -273,7 +274,7 @@ contract DssProxyActions is Common {
             proxy = ProxyRegistryLike(proxyRegistry).build(dst);
         }
         // Transfers CDP to the dst proxy
-        ManagerLike(manager).give(cdp, proxy);
+        give(manager, cdp, proxy);
     }
 
     function cdpAllow(
@@ -615,7 +616,7 @@ contract DssProxyActions is Common {
         bytes32 ilk,
         uint wadD
     ) public payable returns (uint cdp) {
-        cdp = ManagerLike(manager).open(ilk);
+        cdp = open(manager, ilk, address(this));
         lockETHAndDraw(manager, jug, ethJoin, daiJoin, cdp, wadD);
     }
 
@@ -658,7 +659,7 @@ contract DssProxyActions is Common {
         uint wadD,
         bool transferFrom
     ) public returns (uint cdp) {
-        cdp = ManagerLike(manager).open(ilk);
+        cdp = open(manager, ilk, address(this));
         lockGemAndDraw(manager, jug, gemJoin, daiJoin, cdp, wadC, wadD, transferFrom);
     }
 
