@@ -1048,16 +1048,23 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         col.mint(1 ether);
         col.approve(address(proxy), 1 ether);
         uint cdp2 = this.openLockGemAndDraw(address(manager), address(jug), address(colJoin), address(daiJoin), "COL", 1 ether, 5 ether, true);
+        dgd.approve(address(proxy), 1 * 10 ** 9);
+        uint cdp3 = this.openLockGemAndDraw(address(manager), address(jug), address(dgdJoin), address(daiJoin), "DGD", 1 * 10 ** 9, 5 ether, true);
 
         this.cage(address(end));
         end.cage("ETH");
         end.cage("COL");
+        end.cage("DGD");
 
         (uint inkV, uint artV) = vat.urns("ETH", manager.urns(cdp));
         assertEq(inkV, 2 ether);
         assertEq(artV, 300 ether);
 
         (inkV, artV) = vat.urns("COL", manager.urns(cdp2));
+        assertEq(inkV, 1 ether);
+        assertEq(artV, 5 ether);
+
+        (inkV, artV) = vat.urns("DGD", manager.urns(cdp3));
         assertEq(inkV, 1 ether);
         assertEq(artV, 5 ether);
 
@@ -1077,19 +1084,30 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         remainInkVal = 1 ether - 5 * end.tag("COL") / 10 ** 9; // 1 COL (deposited) - 5 DAI debt * COL cage price
         assertEq(col.balanceOf(address(this)), prevBalanceCol + remainInkVal);
 
+        uint prevBalanceDGD = dgd.balanceOf(address(this));
+        this.end_freeGem(address(manager), address(dgdJoin), address(end), cdp3);
+        (inkV, artV) = vat.urns("DGD", manager.urns(cdp3));
+        assertEq(inkV, 0);
+        assertEq(artV, 0);
+        remainInkVal = (1 ether - 5 * end.tag("DGD") / 10 ** 9) / 10 ** 9; // 1 DGD (deposited) - 5 DAI debt * DGD cage price
+        assertEq(dgd.balanceOf(address(this)), prevBalanceDGD + remainInkVal);
+
         end.thaw();
 
         end.flow("ETH");
         end.flow("COL");
+        end.flow("DGD");
 
-        dai.approve(address(proxy), 305 ether);
-        this.end_pack(address(daiJoin), address(end), 305 ether);
+        dai.approve(address(proxy), 310 ether);
+        this.end_pack(address(daiJoin), address(end), 310 ether);
 
-        this.end_cashETH(address(ethJoin), address(end), "ETH", 305 ether);
-        this.end_cashGem(address(colJoin), address(end), "COL", 305 ether);
+        this.end_cashETH(address(ethJoin), address(end), "ETH", 310 ether);
+        this.end_cashGem(address(colJoin), address(end), "COL", 310 ether);
+        this.end_cashGem(address(dgdJoin), address(end), "DGD", 310 ether);
 
         assertEq(address(this).balance, prevBalanceETH + 2 ether - 1); // (-1 rounding)
         assertEq(col.balanceOf(address(this)), prevBalanceCol + 1 ether - 1); // (-1 rounding)
+        assertEq(dgd.balanceOf(address(this)), prevBalanceDGD + 1 * 10 ** 9 - 1); // (-1 rounding)
     }
 
     function testDSRSimpleCase() public {
