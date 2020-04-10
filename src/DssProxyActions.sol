@@ -200,8 +200,8 @@ contract DssProxyActions is Common {
 
     // Public functions
 
-    function transfer(address gem, address dst, uint wad) public {
-        GemLike(gem).transfer(dst, wad);
+    function transfer(address gem, address dst, uint amt) public {
+        GemLike(gem).transfer(dst, amt);
     }
 
     function ethJoin_join(address apt, address urn) public payable {
@@ -213,16 +213,16 @@ contract DssProxyActions is Common {
         GemJoinLike(apt).join(urn, msg.value);
     }
 
-    function gemJoin_join(address apt, address urn, uint wad, bool transferFrom) public {
+    function gemJoin_join(address apt, address urn, uint amt, bool transferFrom) public {
         // Only executes for tokens that have approval/transferFrom implementation
         if (transferFrom) {
             // Gets token from the user's wallet
-            GemJoinLike(apt).gem().transferFrom(msg.sender, address(this), wad);
+            GemJoinLike(apt).gem().transferFrom(msg.sender, address(this), amt);
             // Approves adapter to take the token amount
-            GemJoinLike(apt).gem().approve(apt, wad);
+            GemJoinLike(apt).gem().approve(apt, amt);
         }
         // Joins token collateral into the vat
-        GemJoinLike(apt).join(urn, wad);
+        GemJoinLike(apt).join(urn, amt);
     }
 
     function hope(
@@ -384,18 +384,18 @@ contract DssProxyActions is Common {
         address manager,
         address gemJoin,
         uint cdp,
-        uint wad,
+        uint amt,
         bool transferFrom
     ) public {
         // Takes token amount from user's wallet and joins into the vat
-        gemJoin_join(gemJoin, address(this), wad, transferFrom);
+        gemJoin_join(gemJoin, address(this), amt, transferFrom);
         // Locks token amount into the CDP
         VatLike(ManagerLike(manager).vat()).frob(
             ManagerLike(manager).ilks(cdp),
             ManagerLike(manager).urns(cdp),
             address(this),
             address(this),
-            toInt(convertTo18(gemJoin, wad)),
+            toInt(convertTo18(gemJoin, amt)),
             0
         );
     }
@@ -404,12 +404,12 @@ contract DssProxyActions is Common {
         address manager,
         address gemJoin,
         uint cdp,
-        uint wad,
+        uint amt,
         bool transferFrom,
         address owner
     ) public {
         require(ManagerLike(manager).owns(cdp) == owner, "owner-missmatch");
-        lockGem(manager, gemJoin, cdp, wad, transferFrom);
+        lockGem(manager, gemJoin, cdp, amt, transferFrom);
     }
 
     function freeETH(
@@ -434,15 +434,15 @@ contract DssProxyActions is Common {
         address manager,
         address gemJoin,
         uint cdp,
-        uint wad
+        uint amt
     ) public {
-        uint wad18 = convertTo18(gemJoin, wad);
+        uint wad = convertTo18(gemJoin, amt);
         // Unlocks token amount from the CDP
-        frob(manager, cdp, -toInt(wad18), 0);
+        frob(manager, cdp, -toInt(wad), 0);
         // Moves the amount from the CDP urn to proxy's address
-        flux(manager, cdp, address(this), wad18);
+        flux(manager, cdp, address(this), wad);
         // Exits token amount to the user's wallet as a token
-        GemJoinLike(gemJoin).exit(msg.sender, wad);
+        GemJoinLike(gemJoin).exit(msg.sender, amt);
     }
 
     function exitETH(
@@ -466,13 +466,13 @@ contract DssProxyActions is Common {
         address manager,
         address gemJoin,
         uint cdp,
-        uint wad
+        uint amt
     ) public {
         // Moves the amount from the CDP urn to proxy's address
-        flux(manager, cdp, address(this), convertTo18(gemJoin, wad));
+        flux(manager, cdp, address(this), convertTo18(gemJoin, amt));
 
         // Exits token amount to the user's wallet as a token
-        GemJoinLike(gemJoin).exit(msg.sender, wad);
+        GemJoinLike(gemJoin).exit(msg.sender, amt);
     }
 
     function draw(
@@ -623,7 +623,7 @@ contract DssProxyActions is Common {
         address gemJoin,
         address daiJoin,
         uint cdp,
-        uint wadC,
+        uint amtC,
         uint wadD,
         bool transferFrom
     ) public {
@@ -631,9 +631,9 @@ contract DssProxyActions is Common {
         address vat = ManagerLike(manager).vat();
         bytes32 ilk = ManagerLike(manager).ilks(cdp);
         // Takes token amount from user's wallet and joins into the vat
-        gemJoin_join(gemJoin, urn, wadC, transferFrom);
+        gemJoin_join(gemJoin, urn, amtC, transferFrom);
         // Locks token amount into the CDP and generates debt
-        frob(manager, cdp, toInt(convertTo18(gemJoin, wadC)), _getDrawDart(vat, jug, urn, ilk, wadD));
+        frob(manager, cdp, toInt(convertTo18(gemJoin, amtC)), _getDrawDart(vat, jug, urn, ilk, wadD));
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
         move(manager, cdp, address(this), toRad(wadD));
         // Allows adapter to access to proxy's DAI balance in the vat
@@ -650,12 +650,12 @@ contract DssProxyActions is Common {
         address gemJoin,
         address daiJoin,
         bytes32 ilk,
-        uint wadC,
+        uint amtC,
         uint wadD,
         bool transferFrom
     ) public returns (uint cdp) {
         cdp = open(manager, ilk, address(this));
-        lockGemAndDraw(manager, jug, gemJoin, daiJoin, cdp, wadC, wadD, transferFrom);
+        lockGemAndDraw(manager, jug, gemJoin, daiJoin, cdp, amtC, wadD, transferFrom);
     }
 
     function openLockGNTAndDraw(
@@ -664,7 +664,7 @@ contract DssProxyActions is Common {
         address gntJoin,
         address daiJoin,
         bytes32 ilk,
-        uint wadC,
+        uint amtC,
         uint wadD
     ) public returns (address bag, uint cdp) {
         // Creates bag (if doesn't exist) to hold GNT
@@ -673,8 +673,8 @@ contract DssProxyActions is Common {
             bag = makeGemBag(gntJoin);
         }
         // Transfer funds to the funds which previously were sent to the proxy
-        GemLike(GemJoinLike(gntJoin).gem()).transfer(bag, wadC);
-        cdp = openLockGemAndDraw(manager, jug, gntJoin, daiJoin, ilk, wadC, wadD, false);
+        GemLike(GemJoinLike(gntJoin).gem()).transfer(bag, amtC);
+        cdp = openLockGemAndDraw(manager, jug, gntJoin, daiJoin, ilk, amtC, wadD, false);
     }
 
     function wipeAndFreeETH(
@@ -741,24 +741,24 @@ contract DssProxyActions is Common {
         address gemJoin,
         address daiJoin,
         uint cdp,
-        uint wadC,
+        uint amtC,
         uint wadD
     ) public {
         address urn = ManagerLike(manager).urns(cdp);
         // Joins DAI amount into the vat
         daiJoin_join(daiJoin, urn, wadD);
-        uint wad18 = convertTo18(gemJoin, wadC);
+        uint wadC = convertTo18(gemJoin, amtC);
         // Paybacks debt to the CDP and unlocks token amount from it
         frob(
             manager,
             cdp,
-            -toInt(wad18),
+            -toInt(wadC),
             _getWipeDart(ManagerLike(manager).vat(), VatLike(ManagerLike(manager).vat()).dai(urn), urn, ManagerLike(manager).ilks(cdp))
         );
         // Moves the amount from the CDP urn to proxy's address
-        flux(manager, cdp, address(this), wad18);
+        flux(manager, cdp, address(this), wadC);
         // Exits token amount to the user's wallet as a token
-        GemJoinLike(gemJoin).exit(msg.sender, wadC);
+        GemJoinLike(gemJoin).exit(msg.sender, amtC);
     }
 
     function wipeAllAndFreeGem(
@@ -766,7 +766,7 @@ contract DssProxyActions is Common {
         address gemJoin,
         address daiJoin,
         uint cdp,
-        uint wadC
+        uint amtC
     ) public {
         address vat = ManagerLike(manager).vat();
         address urn = ManagerLike(manager).urns(cdp);
@@ -775,18 +775,18 @@ contract DssProxyActions is Common {
 
         // Joins DAI amount into the vat
         daiJoin_join(daiJoin, urn, _getWipeAllWad(vat, urn, urn, ilk));
-        uint wad18 = convertTo18(gemJoin, wadC);
+        uint wadC = convertTo18(gemJoin, amtC);
         // Paybacks debt to the CDP and unlocks token amount from it
         frob(
             manager,
             cdp,
-            -toInt(wad18),
+            -toInt(wadC),
             -int(art)
         );
         // Moves the amount from the CDP urn to proxy's address
-        flux(manager, cdp, address(this), wad18);
+        flux(manager, cdp, address(this), wadC);
         // Exits token amount to the user's wallet as a token
-        GemJoinLike(gemJoin).exit(msg.sender, wadC);
+        GemJoinLike(gemJoin).exit(msg.sender, amtC);
     }
 }
 
