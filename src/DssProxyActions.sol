@@ -363,6 +363,28 @@ contract DssProxyActions is Common {
         ManagerLike(manager).shift(cdpSrc, cdpOrg);
     }
 
+    function shiftManager(
+      	address managerSrc,
+      	address managerDst,
+      	uint cdpSrc,
+      	uint cdpDst
+    ) public {
+        address vat = ManagerLike(managerSrc).vat();
+      	require(vat == ManagerLike(managerDst).vat(), "vat-mismatch");
+
+      	bool canSrc = (VatLike(vat).can(address(this), managerSrc) != 0);
+      	bool canDst = (VatLike(vat).can(address(this), managerDst) != 0);
+
+      	if(! canSrc) hope(vat, managerSrc);
+      	if(! canDst) hope(vat, managerDst);
+
+      	quit(managerSrc, cdpSrc, address(this));
+      	enter(managerDst, address(this), cdpDst);
+
+      	if(! canSrc) nope(vat, managerSrc);
+      	if(! canDst) nope(vat, managerDst);
+    }
+
     function makeGemBag(
         address gemJoin
     ) public returns (address bag) {

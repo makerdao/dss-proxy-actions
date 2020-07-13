@@ -81,6 +81,10 @@ contract ProxyCalls {
         proxy.execute(dssProxyActions, msg.data);
     }
 
+    function shiftManager(address, address, uint, uint) public {
+        proxy.execute(dssProxyActions, msg.data);
+    }
+
     function lockETH(address, address, uint) public payable {
         (bool success,) = address(proxy).call.value(msg.value)(abi.encodeWithSignature("execute(address,bytes)", dssProxyActions, msg.data));
         require(success, "");
@@ -262,6 +266,7 @@ contract FakeUser {
 
 contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     DssCdpManager manager;
+    DssCdpManager manager2;
 
     GemJoin3 dgdJoin;
     DGD dgd;
@@ -301,6 +306,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(spot, 100 * ONE * ONE / 1500000000 ether);
 
         manager = new DssCdpManager(address(vat));
+        manager2 = new DssCdpManager(address(vat));
         DSProxyFactory factory = new DSProxyFactory();
         registry = new ProxyRegistry(address(factory));
         dssProxyActions = address(new DssProxyActions());
@@ -924,6 +930,37 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(art("ETH", manager.urns(cdpSrc)), 0);
         assertEq(ink("ETH", manager.urns(cdpDst)), 1 ether);
         assertEq(art("ETH", manager.urns(cdpDst)), 50 ether);
+    }
+
+    function testShiftManager() public {
+        for(uint i = 0 ; i < 4 ; i++) {
+            this.nope(address(vat), address(manager));
+            this.nope(address(vat), address(manager2));
+
+            if((i & 0x1) > 0) this.hope(address(vat), address(manager));
+            if((i & 0x2) > 0) this.hope(address(vat), address(manager2));
+
+            uint cdpSrc = this.open(address(manager), "ETH", address(proxy));
+
+            this.lockETHAndDraw.value(1 ether)(address(manager), address(jug), address(ethJoin), address(daiJoin), cdpSrc, 50 ether);
+
+            uint cdpDst = this.open(address(manager2), "ETH", address(proxy));
+
+            assertEq(ink("ETH", manager.urns(cdpSrc)), 1 ether);
+            assertEq(art("ETH", manager.urns(cdpSrc)), 50 ether);
+            assertEq(ink("ETH", manager2.urns(cdpDst)), 0);
+            assertEq(art("ETH", manager2.urns(cdpDst)), 0);
+
+            this.shiftManager(address(manager), address(manager2), cdpSrc, cdpDst);
+
+            assertEq(ink("ETH", manager.urns(cdpSrc)), 0);
+            assertEq(art("ETH", manager.urns(cdpSrc)), 0);
+            assertEq(ink("ETH", manager2.urns(cdpDst)), 1 ether);
+            assertEq(art("ETH", manager2.urns(cdpDst)), 50 ether);
+
+            assertEq(vat.can(address(proxy), address(manager)), (i & 0x1) > 0 ? 1 : 0);
+            assertEq(vat.can(address(proxy), address(manager2)), (i & 0x2) > 0 ? 1 : 0);
+        }
     }
 
     function _flipETH() internal returns (uint cdp) {
