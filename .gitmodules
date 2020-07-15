@@ -7,3 +7,6 @@
 [submodule "lib/proxy-registry"]
 	path = lib/proxy-registry
 	url = https://github.com/makerdao/proxy-registry
+[submodule "lib/ds-weth"]
+	path = lib/ds-weth
+	url = https://github.com/dapphub/ds-weth
