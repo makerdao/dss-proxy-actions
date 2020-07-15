@@ -15,95 +15,95 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity ^0.5.12;
+pragma solidity >=0.5.12;
 
-contract GemLike {
-    function approve(address, uint) public;
-    function transfer(address, uint) public;
-    function transferFrom(address, address, uint) public;
-    function deposit() public payable;
-    function withdraw(uint) public;
+interface GemLike {
+    function approve(address, uint) external;
+    function transfer(address, uint) external;
+    function transferFrom(address, address, uint) external;
+    function deposit() external payable;
+    function withdraw(uint) external;
 }
 
-contract ManagerLike {
-    function cdpCan(address, uint, address) public view returns (uint);
-    function ilks(uint) public view returns (bytes32);
-    function owns(uint) public view returns (address);
-    function urns(uint) public view returns (address);
-    function vat() public view returns (address);
-    function open(bytes32, address) public returns (uint);
-    function give(uint, address) public;
-    function cdpAllow(uint, address, uint) public;
-    function urnAllow(address, uint) public;
-    function frob(uint, int, int) public;
-    function flux(uint, address, uint) public;
-    function move(uint, address, uint) public;
-    function exit(address, uint, address, uint) public;
-    function quit(uint, address) public;
-    function enter(address, uint) public;
-    function shift(uint, uint) public;
+interface ManagerLike {
+    function cdpCan(address, uint, address) external view returns (uint);
+    function ilks(uint) external view returns (bytes32);
+    function owns(uint) external view returns (address);
+    function urns(uint) external view returns (address);
+    function vat() external view returns (address);
+    function open(bytes32, address) external returns (uint);
+    function give(uint, address) external;
+    function cdpAllow(uint, address, uint) external;
+    function urnAllow(address, uint) external;
+    function frob(uint, int, int) external;
+    function flux(uint, address, uint) external;
+    function move(uint, address, uint) external;
+    function exit(address, uint, address, uint) external;
+    function quit(uint, address) external;
+    function enter(address, uint) external;
+    function shift(uint, uint) external;
 }
 
-contract VatLike {
-    function can(address, address) public view returns (uint);
-    function ilks(bytes32) public view returns (uint, uint, uint, uint, uint);
-    function dai(address) public view returns (uint);
-    function urns(bytes32, address) public view returns (uint, uint);
-    function frob(bytes32, address, address, address, int, int) public;
-    function hope(address) public;
-    function move(address, address, uint) public;
+interface VatLike {
+    function can(address, address) external view returns (uint);
+    function ilks(bytes32) external view returns (uint, uint, uint, uint, uint);
+    function dai(address) external view returns (uint);
+    function urns(bytes32, address) external view returns (uint, uint);
+    function frob(bytes32, address, address, address, int, int) external;
+    function hope(address) external;
+    function move(address, address, uint) external;
 }
 
-contract GemJoinLike {
-    function dec() public returns (uint);
-    function gem() public returns (GemLike);
-    function join(address, uint) public payable;
-    function exit(address, uint) public;
+interface GemJoinLike {
+    function dec() external returns (uint);
+    function gem() external returns (GemLike);
+    function join(address, uint) external payable;
+    function exit(address, uint) external;
 }
 
-contract GNTJoinLike {
-    function bags(address) public view returns (address);
-    function make(address) public returns (address);
+interface GNTJoinLike {
+    function bags(address) external view returns (address);
+    function make(address) external returns (address);
 }
 
-contract DaiJoinLike {
-    function vat() public returns (VatLike);
-    function dai() public returns (GemLike);
-    function join(address, uint) public payable;
-    function exit(address, uint) public;
+interface DaiJoinLike {
+    function vat() external returns (VatLike);
+    function dai() external returns (GemLike);
+    function join(address, uint) external payable;
+    function exit(address, uint) external;
 }
 
-contract HopeLike {
-    function hope(address) public;
-    function nope(address) public;
+interface HopeLike {
+    function hope(address) external;
+    function nope(address) external;
 }
 
-contract EndLike {
-    function fix(bytes32) public view returns (uint);
-    function cash(bytes32, uint) public;
-    function free(bytes32) public;
-    function pack(uint) public;
-    function skim(bytes32, address) public;
+interface EndLike {
+    function fix(bytes32) external view returns (uint);
+    function cash(bytes32, uint) external;
+    function free(bytes32) external;
+    function pack(uint) external;
+    function skim(bytes32, address) external;
 }
 
-contract JugLike {
-    function drip(bytes32) public returns (uint);
+interface JugLike {
+    function drip(bytes32) external returns (uint);
 }
 
-contract PotLike {
-    function pie(address) public view returns (uint);
-    function drip() public returns (uint);
-    function join(uint) public;
-    function exit(uint) public;
+interface PotLike {
+    function pie(address) external view returns (uint);
+    function drip() external returns (uint);
+    function join(uint) external;
+    function exit(uint) external;
 }
 
-contract ProxyRegistryLike {
-    function proxies(address) public view returns (address);
-    function build(address) public returns (address);
+interface ProxyRegistryLike {
+    function proxies(address) external view returns (address);
+    function build(address) external returns (address);
 }
 
-contract ProxyLike {
-    function owner() public view returns (address);
+interface ProxyLike {
+    function owner() external view returns (address);
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
