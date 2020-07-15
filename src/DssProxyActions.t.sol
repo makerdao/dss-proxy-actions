@@ -1,16 +1,17 @@
-pragma solidity ^0.5.12;
+pragma solidity >=0.5.12;
 
 import "ds-test/test.sol";
 
 import "./DssProxyActions.sol";
 
-import {DssDeployTestBase, Flipper} from "dss-deploy/DssDeploy.t.base.sol";
+import {DssDeployTestBase, GemJoin, Flipper} from "dss-deploy/DssDeploy.t.base.sol";
 import {DGD, GNT} from "dss-deploy/tokens.sol";
 import {GemJoin3, GemJoin4} from "dss-deploy/join.sol";
 import {DSValue} from "ds-value/value.sol";
 import {DssCdpManager} from "dss-cdp-manager/DssCdpManager.sol";
 import {GetCdps} from "dss-cdp-manager/GetCdps.sol";
 import {ProxyRegistry, DSProxyFactory, DSProxy} from "proxy-registry/ProxyRegistry.sol";
+import {WETH9_} from "ds-weth/weth9.sol";
 
 contract ProxyCalls {
     DSProxy proxy;
@@ -103,8 +104,8 @@ contract ProxyCalls {
         address payable target = address(proxy);
         bytes memory data = abi.encodeWithSignature("execute(address,bytes)", dssProxyActions, msg.data);
         assembly {
-            let succeeded := call(sub(gas, 5000), target, callvalue, add(data, 0x20), mload(data), 0, 0)
-            let size := returndatasize
+            let succeeded := call(sub(gas(), 5000), target, callvalue(), add(data, 0x20), mload(data), 0, 0)
+            let size := returndatasize()
             let response := mload(0x40)
             mstore(0x40, add(response, and(add(add(size, 0x20), 0x1f), not(0x1f))))
             mstore(response, size)
@@ -165,8 +166,8 @@ contract ProxyCalls {
         address payable target = address(proxy);
         bytes memory data = abi.encodeWithSignature("execute(address,bytes)", dssProxyActions, msg.data);
         assembly {
-            let succeeded := call(sub(gas, 5000), target, callvalue, add(data, 0x20), mload(data), 0, 0)
-            let size := returndatasize
+            let succeeded := call(sub(gas(), 5000), target, callvalue(), add(data, 0x20), mload(data), 0, 0)
+            let size := returndatasize()
             let response := mload(0x40)
             mstore(0x40, add(response, and(add(add(size, 0x20), 0x1f), not(0x1f))))
             mstore(response, size)
@@ -271,10 +272,17 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     GNT gnt;
     DSValue pipGNT;
     ProxyRegistry registry;
+    WETH9_ realWeth;
 
     function setUp() public {
         super.setUp();
         deployKeepAuth();
+
+        // Create a real WETH token and replace it with a new adapter in the vat
+        realWeth = new WETH9_();
+        this.deny(address(vat), address(ethJoin));
+        ethJoin = new GemJoin(address(vat), "ETH", address(realWeth));
+        this.rely(address(vat), address(ethJoin));
 
         // Add a token collateral
         dgd = new DGD(1000 * 10 ** 9);
@@ -383,8 +391,8 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         uint cdp = this.open(address(manager), "ETH", address(proxy));
 
         assertEq(dai.balanceOf(address(this)), 0);
-        weth.deposit.value(1 ether)();
-        weth.approve(address(ethJoin), uint(-1));
+        realWeth.deposit.value(1 ether)();
+        realWeth.approve(address(ethJoin), uint(-1));
         ethJoin.join(manager.urns(cdp), 1 ether);
         assertEq(vat.gem("ETH", address(this)), 0);
         assertEq(vat.gem("ETH", manager.urns(cdp)), 1 ether);
@@ -399,8 +407,8 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         uint cdp = this.open(address(manager), "ETH", address(proxy));
 
         assertEq(dai.balanceOf(address(this)), 0);
-        weth.deposit.value(1 ether)();
-        weth.approve(address(ethJoin), uint(-1));
+        realWeth.deposit.value(1 ether)();
+        realWeth.approve(address(ethJoin), uint(-1));
         ethJoin.join(manager.urns(cdp), 1 ether);
 
         this.frob(address(manager), cdp, 0.5 ether, 60 ether);
@@ -849,8 +857,8 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         uint cdp = this.open(address(manager), "ETH", address(proxy));
         this.lockETHAndDraw.value(2 ether)(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 300 ether);
 
-        weth.deposit.value(2 ether)();
-        weth.approve(address(ethJoin), 2 ether);
+        realWeth.deposit.value(2 ether)();
+        realWeth.approve(address(ethJoin), 2 ether);
         ethJoin.join(address(this), 2 ether);
         vat.frob("ETH", address(this), address(this), address(this), 1 ether, 150 ether);
         vat.move(address(this), manager.urns(cdp), 150 ether);
@@ -886,8 +894,8 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     }
 
     function testEnter() public {
-        weth.deposit.value(1 ether)();
-        weth.approve(address(ethJoin), 1 ether);
+        realWeth.deposit.value(1 ether)();
+        realWeth.approve(address(ethJoin), 1 ether);
         ethJoin.join(address(this), 1 ether);
         vat.frob("ETH", address(this), address(this), address(this), 1 ether, 50 ether);
         uint cdp = this.open(address(manager), "ETH", address(proxy));
@@ -936,13 +944,14 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         spotter.poke("ETH");
         uint batchId = cat.bite("ETH", manager.urns(cdp));
 
-
-        address(user1).transfer(10 ether);
-        user1.doEthJoin(address(weth), address(ethJoin), address(user1), 10 ether);
+        realWeth.deposit.value(10 ether)();
+        realWeth.transfer(address(user1), 10 ether);
+        user1.doWethJoin(address(realWeth), address(ethJoin), address(user1), 10 ether);
         user1.doFrob(address(vat), "ETH", address(user1), address(user1), address(user1), 10 ether, 1000 ether);
 
-        address(user2).transfer(10 ether);
-        user2.doEthJoin(address(weth), address(ethJoin), address(user2), 10 ether);
+        realWeth.deposit.value(10 ether)();
+        realWeth.transfer(address(user2), 10 ether);
+        user2.doWethJoin(address(realWeth), address(ethJoin), address(user2), 10 ether);
         user2.doFrob(address(vat), "ETH", address(user2), address(user2), address(user2), 10 ether, 1000 ether);
 
         user1.doHope(address(vat), address(ethFlip));
@@ -975,12 +984,14 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         spotter.poke("COL");
         uint batchId = cat.bite("COL", manager.urns(cdp));
 
-        address(user1).transfer(10 ether);
-        user1.doEthJoin(address(weth), address(ethJoin), address(user1), 10 ether);
+        realWeth.deposit.value(10 ether)();
+        realWeth.transfer(address(user1), 10 ether);
+        user1.doWethJoin(address(realWeth), address(ethJoin), address(user1), 10 ether);
         user1.doFrob(address(vat), "ETH", address(user1), address(user1), address(user1), 10 ether, 1000 ether);
 
-        address(user2).transfer(10 ether);
-        user2.doEthJoin(address(weth), address(ethJoin), address(user2), 10 ether);
+        realWeth.deposit.value(10 ether)();
+        realWeth.transfer(address(user2), 10 ether);
+        user2.doWethJoin(address(realWeth), address(ethJoin), address(user2), 10 ether);
         user2.doFrob(address(vat), "ETH", address(user2), address(user2), address(user2), 10 ether, 1000 ether);
 
         user1.doHope(address(vat), address(colFlip));
@@ -1008,12 +1019,14 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         spotter.poke("DGD");
         uint batchId = cat.bite("DGD", manager.urns(cdp));
 
-        address(user1).transfer(10 ether);
-        user1.doEthJoin(address(weth), address(ethJoin), address(user1), 10 ether);
+        realWeth.deposit.value(10 ether)();
+        realWeth.transfer(address(user1), 10 ether);
+        user1.doWethJoin(address(realWeth), address(ethJoin), address(user1), 10 ether);
         user1.doFrob(address(vat), "ETH", address(user1), address(user1), address(user1), 10 ether, 1000 ether);
 
-        address(user2).transfer(10 ether);
-        user2.doEthJoin(address(weth), address(ethJoin), address(user2), 10 ether);
+        realWeth.deposit.value(10 ether)();
+        realWeth.transfer(address(user2), 10 ether);
+        user2.doWethJoin(address(realWeth), address(ethJoin), address(user2), 10 ether);
         user2.doFrob(address(vat), "ETH", address(user2), address(user2), address(user2), 10 ether, 1000 ether);
 
         user1.doHope(address(vat), address(dgdFlip));
@@ -1185,4 +1198,6 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         // In this case we get 49.999 DAI back as the returned amount is based purely in the pie amount
         assertEq(dai.balanceOf(address(this)), 49999999999999999999);
     }
+
+    function () external payable {}
 }
