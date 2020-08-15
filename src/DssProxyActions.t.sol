@@ -712,6 +712,23 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(address(this).balance, initialBalance - 2 ether);
     }
 
+    function testOpenLockETHAndGiveToProxyNewProxy() public {
+        address user = address(0x123);
+        uint cdp = DssProxyActions(dssProxyActions).openLockETHAndGiveToProxy.value(2 ether)(address(registry),address(manager),address(ethJoin),"ETH",user);
+        assertEq(ink("ETH", manager.urns(cdp)), 2 ether);
+        DSProxy userProxy = registry.proxies(user);
+        assertEq(manager.owns(cdp), address(userProxy));
+    }
+
+    function testOpenLockETHAndGiveToProxyExistingProxy() public {
+        address user = address(0x123);
+        registry.build(user);
+        DSProxy userProxy = registry.proxies(user);        
+        uint cdp = DssProxyActions(dssProxyActions).openLockETHAndGiveToProxy.value(2 ether)(address(registry),address(manager),address(ethJoin),"ETH",user);
+        assertEq(ink("ETH", manager.urns(cdp)), 2 ether);
+        assertEq(manager.owns(cdp), address(userProxy));
+    }
+
     function testLockGemAndDraw() public {
         col.mint(5 ether);
         uint cdp = this.open(address(manager), "COL", address(proxy));

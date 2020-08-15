@@ -656,6 +656,18 @@ contract DssProxyActions is Common {
         lockETHAndDraw(manager, jug, ethJoin, daiJoin, cdp, wadD);
     }
 
+    function openLockETHAndGiveToProxy(
+        address proxyRegistry,
+        address manager,
+        address ethJoin,
+        bytes32 ilk,
+        address dst
+    ) public payable returns (uint cdp) {
+        cdp = open(manager, ilk, address(this));
+        lockETH(manager,ethJoin,cdp);
+        giveToProxy(proxyRegistry,manager,cdp,dst);
+    }
+
     function lockGemAndDraw(
         address manager,
         address jug,
