@@ -5,8 +5,10 @@ import "ds-test/test.sol";
 import "./DssProxyActions.sol";
 
 import {DssDeployTestBase, GemJoin, Flipper} from "dss-deploy/DssDeploy.t.base.sol";
-import {DGD, GNT} from "dss-deploy/tokens.sol";
-import {GemJoin3, GemJoin4} from "dss-deploy/join.sol";
+import {DGD} from "dss-gem-joins/tokens/DGD.sol";
+import {GNT} from "dss-gem-joins/tokens/GNT.sol";
+import {GemJoin3} from "dss-gem-joins/join-3.sol";
+import {GemJoin4} from "dss-gem-joins/join-4.sol";
 import {DSValue} from "ds-value/value.sol";
 import {DssCdpManager} from "dss-cdp-manager/DssCdpManager.sol";
 import {GetCdps} from "dss-cdp-manager/GetCdps.sol";
