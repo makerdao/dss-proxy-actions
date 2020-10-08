@@ -10,3 +10,6 @@
 [submodule "lib/ds-weth"]
 	path = lib/ds-weth
 	url = https://github.com/dapphub/ds-weth
+[submodule "lib/dss-gem-joins"]
+	path = lib/dss-gem-joins
+	url = https://github.com/makerdao/dss-gem-joins
