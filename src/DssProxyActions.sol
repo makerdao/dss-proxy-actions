@@ -68,6 +68,14 @@ interface GNTJoinLike {
     function make(address) external returns (address);
 }
 
+interface GemJoin9Like {
+    function dec() external returns (uint);
+    function gem() external returns (GemLike);
+    function join(address) external;
+    function join(address, uint) external;
+    function exit(address, uint) external;
+}
+
 interface DaiJoinLike {
     function vat() external returns (VatLike);
     function dai() external returns (GemLike);
@@ -242,6 +250,17 @@ contract DssProxyActions is Common {
         }
         // Joins token collateral into the vat
         GemJoinLike(apt).join(urn, amt);
+    }
+
+    function gemJoinTransferFee_join(address apt, address urn, uint amt, bool transferFrom) public {
+        // Only executes for tokens that have approval/transferFrom implementation
+        if (transferFrom) {
+            // Gets token from the user's wallet and send it directly to the adapter
+            // This saves having to incur two transfers on the token (and thus the fee)
+            GemJoinLike(apt).gem().transferFrom(msg.sender, apt, amt);
+        }
+        // Joins token collateral into the vat
+        GemJoin9Like(apt).join(urn);
     }
 
     function hope(
