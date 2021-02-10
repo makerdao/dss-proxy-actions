@@ -68,12 +68,8 @@ interface GNTJoinLike {
     function make(address) external returns (address);
 }
 
-interface GemJoin9Like {
-    function dec() external returns (uint);
-    function gem() external returns (GemLike);
-    function join(address) external;
-    function join(address, uint) external;
-    function exit(address, uint) external;
+interface GemJoinDirectLike {
+    function join(address) external returns (uint256);
 }
 
 interface DaiJoinLike {
@@ -252,7 +248,7 @@ contract DssProxyActions is Common {
         GemJoinLike(apt).join(urn, amt);
     }
 
-    function gemJoinTransferFee_join(address apt, address urn, uint amt, bool transferFrom) public {
+    function gemJoinDirect_join(address apt, address urn, uint amt, bool transferFrom) public returns (uint256) {
         // Only executes for tokens that have approval/transferFrom implementation
         if (transferFrom) {
             // Gets token from the user's wallet and send it directly to the adapter
@@ -260,7 +256,7 @@ contract DssProxyActions is Common {
             GemJoinLike(apt).gem().transferFrom(msg.sender, apt, amt);
         }
         // Joins token collateral into the vat
-        GemJoin9Like(apt).join(urn);
+        return GemJoinDirectLike(apt).join(urn);
     }
 
     function hope(
@@ -423,10 +419,15 @@ contract DssProxyActions is Common {
         address gemJoin,
         uint cdp,
         uint amt,
-        bool transferFrom
+        bool transferFrom,
+        bool direct
     ) public {
         // Takes token amount from user's wallet and joins into the vat
-        gemJoin_join(gemJoin, address(this), amt, transferFrom);
+        if (direct) {
+            amt = gemJoinDirect_join(gemJoin, address(this), amt, transferFrom);
+        } else {
+            gemJoin_join(gemJoin, address(this), amt, transferFrom);
+        }
         // Locks token amount into the CDP
         VatLike(ManagerLike(manager).vat()).frob(
             ManagerLike(manager).ilks(cdp),
@@ -444,10 +445,11 @@ contract DssProxyActions is Common {
         uint cdp,
         uint amt,
         bool transferFrom,
+        bool direct,
         address owner
     ) public {
         require(ManagerLike(manager).owns(cdp) == owner, "owner-missmatch");
-        lockGem(manager, gemJoin, cdp, amt, transferFrom);
+        lockGem(manager, gemJoin, cdp, amt, transferFrom, direct);
     }
 
     function freeETH(
@@ -663,15 +665,24 @@ contract DssProxyActions is Common {
         uint cdp,
         uint amtC,
         uint wadD,
-        bool transferFrom
+        bool transferFrom,
+        bool direct
     ) public {
         address urn = ManagerLike(manager).urns(cdp);
         address vat = ManagerLike(manager).vat();
         bytes32 ilk = ManagerLike(manager).ilks(cdp);
         // Takes token amount from user's wallet and joins into the vat
-        gemJoin_join(gemJoin, urn, amtC, transferFrom);
-        // Locks token amount into the CDP and generates debt
-        frob(manager, cdp, toInt(convertTo18(gemJoin, amtC)), _getDrawDart(vat, jug, urn, ilk, wadD));
+        if (direct) {
+            amtC = gemJoinDirect_join(gemJoin, urn, amtC, transferFrom);
+        } else {
+            gemJoin_join(gemJoin, urn, amtC, transferFrom);
+        }
+        // Avoid stack too deep
+        {
+            // Locks token amount into the CDP and generates debt
+            int dart = _getDrawDart(vat, jug, urn, ilk, wadD);
+            frob(manager, cdp, toInt(convertTo18(gemJoin, amtC)), dart);
+        }
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
         move(manager, cdp, address(this), toRad(wadD));
         // Allows adapter to access to proxy's DAI balance in the vat
@@ -690,10 +701,11 @@ contract DssProxyActions is Common {
         bytes32 ilk,
         uint amtC,
         uint wadD,
-        bool transferFrom
+        bool transferFrom,
+        bool direct
     ) public returns (uint cdp) {
         cdp = open(manager, ilk, address(this));
-        lockGemAndDraw(manager, jug, gemJoin, daiJoin, cdp, amtC, wadD, transferFrom);
+        lockGemAndDraw(manager, jug, gemJoin, daiJoin, cdp, amtC, wadD, transferFrom, direct);
     }
 
     function openLockGNTAndDraw(
@@ -712,7 +724,7 @@ contract DssProxyActions is Common {
         }
         // Transfer funds to the funds which previously were sent to the proxy
         GemLike(GemJoinLike(gntJoin).gem()).transfer(bag, amtC);
-        cdp = openLockGemAndDraw(manager, jug, gntJoin, daiJoin, ilk, amtC, wadD, false);
+        cdp = openLockGemAndDraw(manager, jug, gntJoin, daiJoin, ilk, amtC, wadD, false, false);
     }
 
     function wipeAndFreeETH(
