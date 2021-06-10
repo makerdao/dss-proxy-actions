@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity ^0.6.12;
 
 interface GemLike {
     function approve(address, uint256) external;
@@ -224,7 +224,7 @@ contract DssProxyActions is Common {
 
     function ethJoin_join(address apt, address urn) public payable {
         // Wraps ETH in WETH
-        GemJoinLike(apt).gem().deposit.value(msg.value)();
+        GemJoinLike(apt).gem().deposit{value: msg.value}();
         // Approves adapter to take the WETH amount
         GemJoinLike(apt).gem().approve(address(apt), msg.value);
         // Joins WETH collateral into the vat
