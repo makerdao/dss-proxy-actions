@@ -63,6 +63,10 @@ interface GemJoinLike {
     function exit(address, uint256) external;
 }
 
+interface GemJoinDirectLike {
+    function join(address) external returns (uint256);
+}
+
 interface DaiJoinLike {
     function vat() external returns (VatLike);
     function dai() external returns (GemLike);
@@ -242,6 +246,14 @@ contract DssProxyActions is Common {
         GemJoinLike(apt).join(urn, amt);
     }
 
+    function gemJoinDirect_join(address apt, address urn, uint amt) public returns (uint256) {
+        // Gets token from the user's wallet and send it directly to the adapter
+        // This saves having to incur two transfers on the token (and thus the fee)
+        GemJoinLike(apt).gem().transferFrom(msg.sender, apt, amt);
+        // Joins token collateral into the vat
+        return GemJoinDirectLike(apt).join(urn);
+    }
+
     function hope(
         address obj,
         address usr
@@ -411,6 +423,25 @@ contract DssProxyActions is Common {
     ) public {
         // Takes token amount from user's wallet and joins into the vat
         gemJoin_join(gemJoin, address(this), amt);
+        // Locks token amount into the CDP
+        VatLike(ManagerLike(manager).vat()).frob(
+            ManagerLike(manager).ilks(cdp),
+            ManagerLike(manager).urns(cdp),
+            address(this),
+            address(this),
+            toInt(convertTo18(gemJoin, amt)),
+            0
+        );
+    }
+
+    function lockGemDirect(
+        address manager,
+        address gemJoin,
+        uint256 cdp,
+        uint256 amt
+    ) public {
+        // Takes token amount from user's wallet and joins into the vat
+        amt = gemJoinDirect_join(gemJoin, address(this), amt);
         // Locks token amount into the CDP
         VatLike(ManagerLike(manager).vat()).frob(
             ManagerLike(manager).ilks(cdp),
@@ -680,6 +711,32 @@ contract DssProxyActions is Common {
         bytes32 ilk = ManagerLike(manager).ilks(cdp);
         // Takes token amount from user's wallet and joins into the vat
         gemJoin_join(gemJoin, urn, amtC);
+        // Locks token amount into the CDP and generates debt
+        frob(manager, cdp, toInt(convertTo18(gemJoin, amtC)), _getDrawDart(vat, jug, urn, ilk, wadD));
+        // Moves the DAI amount (balance in the vat in rad) to proxy's address
+        move(manager, cdp, address(this), toRad(wadD));
+        // Allows adapter to access to proxy's DAI balance in the vat
+        if (VatLike(vat).can(address(this), address(daiJoin)) == 0) {
+            VatLike(vat).hope(daiJoin);
+        }
+        // Exits DAI to the user's wallet as a token
+        DaiJoinLike(daiJoin).exit(msg.sender, wadD);
+    }
+
+    function lockGemDirectAndDraw(
+        address manager,
+        address jug,
+        address gemJoin,
+        address daiJoin,
+        uint256 cdp,
+        uint256 amtC,
+        uint256 wadD
+    ) public {
+        address urn = ManagerLike(manager).urns(cdp);
+        address vat = ManagerLike(manager).vat();
+        bytes32 ilk = ManagerLike(manager).ilks(cdp);
+        // Takes token amount from user's wallet and joins into the vat
+        amtC = gemJoinDirect_join(gemJoin, urn, amtC);
         // Locks token amount into the CDP and generates debt
         frob(manager, cdp, toInt(convertTo18(gemJoin, amtC)), _getDrawDart(vat, jug, urn, ilk, wadD));
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
