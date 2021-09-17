@@ -4,7 +4,7 @@
 [submodule "lib/dss-cdp-manager"]
 	path = lib/dss-cdp-manager
 	url = https://github.com/makerdao/dss-cdp-manager
-	branch = dss-v1.2
+	branch = v1.2
 [submodule "lib/proxy-registry"]
 	path = lib/proxy-registry
 	url = https://github.com/makerdao/proxy-registry
@@ -14,4 +14,4 @@
 [submodule "lib/dss-gem-joins"]
 	path = lib/dss-gem-joins
 	url = https://github.com/makerdao/dss-gem-joins
-	branch = dss-v1.2
+	branch = v1.2
