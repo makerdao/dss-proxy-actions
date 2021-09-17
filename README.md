@@ -1,4 +1,6 @@
 # dss-proxy-actions
+![Build Status](https://github.com/makerdao/dss-proxy-actions/actions/workflows/.github/workflows/tests.yaml/badge.svg?branch=dev)
+
 Proxy functions to be used via ds-proxy. These functions are based on `dss-cdp-manager` as CDP registry.
 
 https://github.com/makerdao/dss-proxy-actions
