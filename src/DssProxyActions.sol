@@ -135,8 +135,8 @@ contract DssProxyActions is Common {
         require((z = x - y) <= x, "sub-overflow");
     }
 
-    function toInt(uint256 x) internal pure returns (int256 y) {
-        y = int(x);
+    function toInt256(uint256 x) internal pure returns (int256 y) {
+        y = int256(x);
         require(y >= 0, "int-overflow");
     }
 
@@ -169,7 +169,7 @@ contract DssProxyActions is Common {
         // If there was already enough DAI in the vat balance, just exits it without adding more debt
         if (dai < mul(wad, RAY)) {
             // Calculates the needed dart so together with the existing dai in the vat is enough to exit wad amount of DAI tokens
-            dart = toInt(sub(mul(wad, RAY), dai) / rate);
+            dart = toInt256(sub(mul(wad, RAY), dai) / rate);
             // This is neeeded due lack of precision. It might need to sum an extra dart wei (for the given DAI wad amount)
             dart = mul(uint256(dart), rate) < mul(wad, RAY) ? dart + 1 : dart;
         }
@@ -187,9 +187,9 @@ contract DssProxyActions is Common {
         (, uint256 art) = VatLike(vat).urns(ilk, urn);
 
         // Uses the whole dai balance in the vat to reduce the debt
-        dart = toInt(dai / rate);
+        dart = toInt256(dai / rate);
         // Checks the calculated dart is not higher than urn.art (total debt), otherwise uses its value
-        dart = uint256(dart) <= art ? - dart : - toInt(art);
+        dart = uint256(dart) <= art ? - dart : - toInt256(art);
     }
 
     function _getWipeAllWad(
@@ -376,7 +376,7 @@ contract DssProxyActions is Common {
             ManagerLike(manager).urns(cdp),
             address(this),
             address(this),
-            toInt(msg.value),
+            toInt256(msg.value),
             0
         );
     }
@@ -417,7 +417,7 @@ contract DssProxyActions is Common {
             ManagerLike(manager).urns(cdp),
             address(this),
             address(this),
-            toInt(convertTo18(gemJoin, amt)),
+            toInt256(convertTo18(gemJoin, amt)),
             0
         );
     }
@@ -453,7 +453,7 @@ contract DssProxyActions is Common {
         uint256 wad
     ) public {
         // Unlocks WETH amount from the CDP
-        frob(manager, cdp, -toInt(wad), 0);
+        frob(manager, cdp, -toInt256(wad), 0);
         // Moves the amount from the CDP urn to proxy's address
         flux(manager, cdp, address(this), wad);
         // Exits WETH amount to proxy address as a token
@@ -472,7 +472,7 @@ contract DssProxyActions is Common {
     ) public {
         uint256 wad = convertTo18(gemJoin, amt);
         // Unlocks token amount from the CDP
-        frob(manager, cdp, -toInt(wad), 0);
+        frob(manager, cdp, -toInt256(wad), 0);
         // Moves the amount from the CDP urn to proxy's address
         flux(manager, cdp, address(this), wad);
         // Exits token amount to the user's wallet as a token
@@ -588,7 +588,7 @@ contract DssProxyActions is Common {
             // Joins DAI amount into the vat
             daiJoin_join(daiJoin, urn, _getWipeAllWad(vat, urn, urn, ilk));
             // Paybacks debt to the CDP
-            frob(manager, cdp, 0, -int(art));
+            frob(manager, cdp, 0, -int256(art));
         } else {
             // Joins DAI amount into the vat
             daiJoin_join(daiJoin, address(this), _getWipeAllWad(vat, address(this), urn, ilk));
@@ -599,7 +599,7 @@ contract DssProxyActions is Common {
                 address(this),
                 address(this),
                 0,
-                -int(art)
+                -int256(art)
             );
         }
     }
@@ -628,7 +628,7 @@ contract DssProxyActions is Common {
         // Receives ETH amount, converts it to WETH and joins it into the vat
         ethJoin_join(ethJoin, urn);
         // Locks WETH amount into the CDP and generates debt
-        frob(manager, cdp, toInt(msg.value), _getDrawDart(vat, jug, urn, ilk, wadD));
+        frob(manager, cdp, toInt256(msg.value), _getDrawDart(vat, jug, urn, ilk, wadD));
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
         move(manager, cdp, address(this), toRad(wadD));
         // Allows adapter to access to proxy's DAI balance in the vat
@@ -681,7 +681,7 @@ contract DssProxyActions is Common {
         // Takes token amount from user's wallet and joins into the vat
         gemJoin_join(gemJoin, urn, amtC);
         // Locks token amount into the CDP and generates debt
-        frob(manager, cdp, toInt(convertTo18(gemJoin, amtC)), _getDrawDart(vat, jug, urn, ilk, wadD));
+        frob(manager, cdp, toInt256(convertTo18(gemJoin, amtC)), _getDrawDart(vat, jug, urn, ilk, wadD));
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
         move(manager, cdp, address(this), toRad(wadD));
         // Allows adapter to access to proxy's DAI balance in the vat
@@ -735,7 +735,7 @@ contract DssProxyActions is Common {
         frob(
             manager,
             cdp,
-            -toInt(wadC),
+            -toInt256(wadC),
             _getWipeDart(ManagerLike(manager).vat(), VatLike(ManagerLike(manager).vat()).dai(urn), urn, ManagerLike(manager).ilks(cdp))
         );
         // Moves the amount from the CDP urn to proxy's address
@@ -766,8 +766,8 @@ contract DssProxyActions is Common {
         frob(
             manager,
             cdp,
-            -toInt(wadC),
-            -int(art)
+            -toInt256(wadC),
+            -int256(art)
         );
         // Moves the amount from the CDP urn to proxy's address
         flux(manager, cdp, address(this), wadC);
@@ -795,7 +795,7 @@ contract DssProxyActions is Common {
         frob(
             manager,
             cdp,
-            -toInt(wadC),
+            -toInt256(wadC),
             _getWipeDart(ManagerLike(manager).vat(), VatLike(ManagerLike(manager).vat()).dai(urn), urn, ManagerLike(manager).ilks(cdp))
         );
         // Moves the amount from the CDP urn to proxy's address
@@ -823,8 +823,8 @@ contract DssProxyActions is Common {
         frob(
             manager,
             cdp,
-            -toInt(wadC),
-            -int(art)
+            -toInt256(wadC),
+            -int256(art)
         );
         // Moves the amount from the CDP urn to proxy's address
         flux(manager, cdp, address(this), wadC);
