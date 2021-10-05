@@ -170,9 +170,9 @@ contract DssProxyActions is Common {
         // If there was already enough DAI in the vat balance, just exits it without adding more debt
         uint256 rad = _mul(wad, RAY);
         if (dai < rad) {
-            uint256 toDraw = rad - dai;
+            uint256 toDraw = rad - dai; // dai < rad
             // Calculates the needed dart so together with the existing dai in the vat is enough to exit wad amount of DAI tokens
-            dart = _toInt256(toDraw / rate); // dai < rad
+            dart = _toInt256(toDraw / rate);
             // This is neeeded due lack of precision. It might need to sum an extra dart wei (for the given DAI wad amount)
             dart = _mul(uint256(dart), rate) < toDraw ? dart + 1 : dart;
         }
