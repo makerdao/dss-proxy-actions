@@ -119,10 +119,11 @@ contract Common {
     // Public functions
 
     function daiJoin_join(address daiJoin, address urn, uint256 wad) public {
+        GemLike dai = DaiJoinLike(daiJoin).dai();
         // Gets DAI from the user's wallet
-        DaiJoinLike(daiJoin).dai().transferFrom(msg.sender, address(this), wad);
+        dai.transferFrom(msg.sender, address(this), wad);
         // Approves adapter to take the DAI amount
-        DaiJoinLike(daiJoin).dai().approve(daiJoin, wad);
+        dai.approve(daiJoin, wad);
         // Joins DAI into the vat
         DaiJoinLike(daiJoin).join(urn, wad);
     }
