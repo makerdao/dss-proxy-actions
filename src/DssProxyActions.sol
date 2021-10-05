@@ -118,13 +118,13 @@ contract Common {
 
     // Public functions
 
-    function daiJoin_join(address apt, address urn, uint256 wad) public {
+    function daiJoin_join(address daiJoin, address urn, uint256 wad) public {
         // Gets DAI from the user's wallet
-        DaiJoinLike(apt).dai().transferFrom(msg.sender, address(this), wad);
+        DaiJoinLike(daiJoin).dai().transferFrom(msg.sender, address(this), wad);
         // Approves adapter to take the DAI amount
-        DaiJoinLike(apt).dai().approve(apt, wad);
+        DaiJoinLike(daiJoin).dai().approve(daiJoin, wad);
         // Joins DAI into the vat
-        DaiJoinLike(apt).join(urn, wad);
+        DaiJoinLike(daiJoin).join(urn, wad);
     }
 }
 
@@ -218,28 +218,30 @@ contract DssProxyActions is Common {
         GemLike(gem).transfer(dst, amt);
     }
 
-    function ethJoin_join(address apt, address urn) public payable {
+    function ethJoin_join(address ethJoin, address urn) public payable {
+        GemLike gem = GemJoinLike(ethJoin).gem();
         // Wraps ETH in WETH
-        GemJoinLike(apt).gem().deposit{value: msg.value}();
+        gem.deposit{value: msg.value}();
         // Approves adapter to take the WETH amount
-        GemJoinLike(apt).gem().approve(address(apt), msg.value);
+        gem.approve(address(ethJoin), msg.value);
         // Joins WETH collateral into the vat
-        GemJoinLike(apt).join(urn, msg.value);
+        GemJoinLike(ethJoin).join(urn, msg.value);
     }
 
     // Deprecated
-    function gemJoin_join(address apt, address urn, uint256 amt, bool) public {
-        gemJoin_join(apt, urn, amt);
+    function gemJoin_join(address gemJoin, address urn, uint256 amt, bool) public {
+        gemJoin_join(gemJoin, urn, amt);
     }
     //
 
-    function gemJoin_join(address apt, address urn, uint256 amt) public {
+    function gemJoin_join(address gemJoin, address urn, uint256 amt) public {
+        GemLike gem = GemJoinLike(gemJoin).gem();
         // Gets token from the user's wallet
-        GemJoinLike(apt).gem().transferFrom(msg.sender, address(this), amt);
+        gem.transferFrom(msg.sender, address(this), amt);
         // Approves adapter to take the token amount
-        GemJoinLike(apt).gem().approve(apt, amt);
+        gem.approve(gemJoin, amt);
         // Joins token collateral into the vat
-        GemJoinLike(apt).join(urn, amt);
+        GemJoinLike(gemJoin).join(urn, amt);
     }
 
     function hope(
