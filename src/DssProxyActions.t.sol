@@ -16,6 +16,49 @@ import {GetCdps} from "dss-cdp-manager/GetCdps.sol";
 import {ProxyRegistry, DSProxyFactory, DSProxy} from "proxy-registry/ProxyRegistry.sol";
 import {WETH9_} from "ds-weth/weth9.sol";
 
+// TODO: take/move somewhere else?
+// TODO: change DGD to regular erc20
+
+contract WstETH is DGD{
+    DGD public stETH;
+    uint256 constant public SharesByPooledEth = 955629254121030571;
+
+    constructor(DGD _stETH, uint256 _supply) DGD(_supply) public {
+        stETH = _stETH;
+    }
+
+    function _getSharesByPooledEth(uint256 _stETHAmount) internal view returns (uint256) {
+        return _stETHAmount * SharesByPooledEth / 1e18;
+    }
+
+    function _getPooledEthByShares(uint256 _wstETHAmount) internal view returns (uint256) {
+        return _wstETHAmount * 1e18 / SharesByPooledEth;
+    }
+
+
+    function wrap(uint256 _stETHAmount) external returns (uint256) {
+        require(_stETHAmount > 0, "wstETH: can't wrap zero stETH");
+        uint256 wstETHAmount = _getSharesByPooledEth(_stETHAmount);
+        _balances[msg.sender] = add(_balances[msg.sender], wstETHAmount);
+        _supply= add(_supply , wstETHAmount);
+        stETH.transferFrom(msg.sender, address(this), _stETHAmount);
+        return wstETHAmount;
+    }
+
+    function unwrap(uint256 _wstETHAmount) external returns (uint256) {
+        require(_wstETHAmount > 0, "wstETH: zero amount unwrap not allowed");
+        uint256 stETHAmount = _getPooledEthByShares(_wstETHAmount);
+        _balances[msg.sender] = sub(_balances[msg.sender], _wstETHAmount);
+        _supply = sub(_supply, _wstETHAmount);
+        stETH.transfer(msg.sender, stETHAmount);
+        return stETHAmount;
+    }
+
+    function getWstETHByStETH(uint256 _stETHAmount) external view returns (uint256) {
+        return _getSharesByPooledEth(_stETHAmount);
+    }
+}
+
 contract ProxyCalls {
     DSProxy proxy;
     address dssProxyActions;
