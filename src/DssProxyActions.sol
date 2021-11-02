@@ -550,9 +550,9 @@ contract DssProxyActions is Common {
         // Exits WstETH amount to proxy address as a token
         GemJoinLike(WstETHJoin).exit(address(this), wad);
         // Converts WstETH to StETH
-        GemJoinLike(WstETHJoin).gem().unwrap(wad);
+        uint256 unwrapped = GemJoinLike(WstETHJoin).gem().unwrap(wad);
         // Sends StETH back to the user's wallet
-        GemLike(stETH).transfer(msg.sender, amt);
+        GemLike(stETH).transfer(msg.sender, unwrapped);
     }
 
     function exitETH(
@@ -599,9 +599,9 @@ contract DssProxyActions is Common {
         // Exits WstETH amount to proxy address as a token
         GemJoinLike(WstETHJoin).exit(address(this), wad);
         // Converts WstETH to StETH
-        GemJoinLike(WstETHJoin).gem().unwrap(wad);
+        uint256 unwrapped = GemJoinLike(WstETHJoin).gem().unwrap(wad);
         // Sends StETH back to the user's wallet
-        GemLike(stETH).transfer(msg.sender, amt);
+        GemLike(stETH).transfer(msg.sender, unwrapped);
     }
 
     function draw(
@@ -1029,9 +1029,9 @@ contract DssProxyActions is Common {
         // Exits WstETH amount to proxy address as a token
         GemJoinLike(WstETHJoin).exit(address(this), wadC);
         // Converts WstETH to StETH
-        GemJoinLike(WstETHJoin).gem().unwrap(wadC);
+        uint256 unwrapped = GemJoinLike(WstETHJoin).gem().unwrap(wadC);
         // Sends StETH back to the user's wallet
-        GemLike(stETH).transfer(msg.sender, amtC);
+        GemLike(stETH).transfer(msg.sender, unwrapped);
     }
 
     function wipeAllAndFreeStETH(
@@ -1063,9 +1063,9 @@ contract DssProxyActions is Common {
         // Exits WstETH amount to proxy address as a token
         GemJoinLike(WstETHJoin).exit(address(this), wadC);
         // Converts WstETH to StETH
-        GemJoinLike(WstETHJoin).gem().unwrap(wadC);
+        uint256 unwrapped = GemJoinLike(WstETHJoin).gem().unwrap(wadC);
         // Sends StETH back to the user's wallet
-        GemLike(stETH).transfer(msg.sender, amtC);
+        GemLike(stETH).transfer(msg.sender, unwrapped);
     }
 }
 
@@ -1136,9 +1136,9 @@ contract DssProxyActionsEnd is Common {
         // Exits WstETH amount to proxy address as a token
         GemJoinLike(WstETHJoin).exit(address(this), wad);
         // Converts WstETH to StETH
-        uint256 amt = GemJoinLike(WstETHJoin).gem().unwrap(wad);
+        uint256 unwrapped = GemJoinLike(WstETHJoin).gem().unwrap(wad);
         // Sends StETH back to the user's wallet
-        GemLike(stETH).transfer(msg.sender, amt);
+        GemLike(stETH).transfer(msg.sender, unwrapped);
     }
 
     function pack(
@@ -1195,9 +1195,9 @@ contract DssProxyActionsEnd is Common {
         // Exits WstETH amount to proxy address as a token
         GemJoinLike(WstETHJoin).exit(address(this), wadC);
         // Converts WstETH to StETH
-        uint256 amt = GemJoinLike(WstETHJoin).gem().unwrap(wadC);
+        uint256 unwrapped = GemJoinLike(WstETHJoin).gem().unwrap(wadC);
         // Sends StETH back to the user's wallet
-        GemLike(stETH).transfer(msg.sender, amt);
+        GemLike(stETH).transfer(msg.sender, unwrapped);
     }
 }
 
