@@ -258,6 +258,8 @@ contract DssProxyActions is Common {
 
         // Gets token from the user's wallet
         GemLike(gem.stETH()).transferFrom(msg.sender, address(this), amt);
+        // Apprves wrapping
+        GemLike(gem.stETH()).approve(address(gem), amt);
         // Wraps StETH in WstETH
         wad = gem.wrap(amt);
         // Approves adapter to take the WstETH amount
@@ -495,7 +497,7 @@ contract DssProxyActions is Common {
         uint256 cdp,
         uint256 amt,
         address owner
-    ) public payable {
+    ) public {
         require(ManagerLike(manager).owns(cdp) == owner, "owner-missmatch");
         lockStETH(manager, WstETHJoin, cdp, amt);
     }
@@ -855,7 +857,7 @@ contract DssProxyActions is Common {
         uint256 cdp,
         uint256 amtC,
         uint256 wadD
-    ) public payable {
+    ) public {
         address urn = ManagerLike(manager).urns(cdp);
         address vat = ManagerLike(manager).vat();
 
@@ -883,7 +885,7 @@ contract DssProxyActions is Common {
         bytes32 ilk,
         uint256 amtC,
         uint256 wadD
-    ) public payable returns (uint256 cdp) {
+    ) public returns (uint256 cdp) {
         cdp = open(manager, ilk, address(this));
         lockStETHAndDraw(manager, jug, WstETHJoin, daiJoin, cdp, amtC, wadD);
     }
