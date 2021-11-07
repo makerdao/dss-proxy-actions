@@ -249,17 +249,13 @@ contract DssProxyActions is Common {
         GemJoinLike(gemJoin).join(urn, amt);
     }
 
-    function stETHJoin_join(
-        address WstETHJoin,
-        address urn,
-        uint256 amt
-    ) public returns (uint256 wad){
+    function stETHJoin_join(address WstETHJoin, address urn, uint256 amt) public returns (uint256 wad) {
         GemLike gem = GemJoinLike(WstETHJoin).gem();
-
+        GemLike stETH = GemLike(gem.stETH());
         // Gets token from the user's wallet
-        GemLike(gem.stETH()).transferFrom(msg.sender, address(this), amt);
-        // Apprves wrapping
-        GemLike(gem.stETH()).approve(address(gem), amt);
+        stETH.transferFrom(msg.sender, address(this), amt);
+        // Approves wrapping
+        stETH.approve(address(gem), amt);
         // Wraps StETH in WstETH
         wad = gem.wrap(amt);
         // Approves adapter to take the WstETH amount
@@ -542,7 +538,6 @@ contract DssProxyActions is Common {
         uint256 amt
     ) public {
         GemLike gem = GemJoinLike(WstETHJoin).gem();
-
         // Calculates how much WstETH to free
         uint256 wad = gem.getWstETHByStETH(amt);
         // Unlocks WstETH amount from the CDP
@@ -594,7 +589,6 @@ contract DssProxyActions is Common {
         uint256 amt
     ) public {
         GemLike gem = GemJoinLike(WstETHJoin).gem();
-
         // Calculates how much WstETH to exit
         uint256 wad = gem.getWstETHByStETH(amt);
         // Moves the amount from the CDP urn to proxy's address
@@ -860,11 +854,9 @@ contract DssProxyActions is Common {
     ) public {
         address urn = ManagerLike(manager).urns(cdp);
         address vat = ManagerLike(manager).vat();
-
         // Receives stETH amount, converts it to WstETH and joins it into the vat
         uint256 wad = stETHJoin_join(WstETHJoin, urn, amtC);
-        // Locks WstETH amount into the CDP and generates debt
-        // Avoid stack too depp
+        // Locks WstETH amount into the CDP and generates debt, avoid stack too depp
         int256 dart = _getDrawDart(vat, jug, urn, ManagerLike(manager).ilks(cdp), wadD);
         frob(manager, cdp, _toInt256(wad), dart);
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
@@ -1015,14 +1007,17 @@ contract DssProxyActions is Common {
         daiJoin_join(daiJoin, urn, wadD);
         // Calculates how much WstETH to exit, not extracting gem to avoid stack too deep
         uint256 wadC = GemJoinLike(WstETHJoin).gem().getWstETHByStETH(amtC);
-        // Avoid stack too deep
-        bytes32 ilk = ManagerLike(manager).ilks(cdp);
         // Paybacks debt to the CDP and unlocks WstETH amount from it
         frob(
             manager,
             cdp,
             -_toInt256(wadC),
-            _getWipeDart(ManagerLike(manager).vat(), VatLike(ManagerLike(manager).vat()).dai(urn), urn, ilk)
+            _getWipeDart(
+                ManagerLike(manager).vat(),
+                VatLike(ManagerLike(manager).vat()).dai(urn),
+                urn,
+                ManagerLike(manager).ilks(cdp)
+            )
         );
         // Moves the amount from the CDP urn to proxy's address
         flux(manager, cdp, address(this), wadC);
@@ -1190,7 +1185,6 @@ contract DssProxyActionsEnd is Common {
         uint256 wad
     ) public {
         GemLike gem = GemJoinLike(WstETHJoin).gem();
-
         EndLike(end).cash(ilk, wad);
         uint256 wadC = _mul(wad, EndLike(end).fix(ilk)) / RAY;
         // Exits WstETH amount to proxy address as a token
