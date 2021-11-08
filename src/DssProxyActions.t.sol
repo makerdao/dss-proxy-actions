@@ -26,26 +26,26 @@ contract ProxyCalls {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function open(address, bytes32, address) public returns (uint256 cdp) {
+    function open(bytes32, address) public returns (uint256 cdp) {
         bytes memory response = proxy.execute(dssProxyActions, msg.data);
         assembly {
             cdp := mload(add(response, 0x20))
         }
     }
 
-    function give(address, uint256, address) public {
+    function give(uint256, address) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function giveToProxy(address, address, uint256, address) public {
+    function giveToProxy(address, uint256, address) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function cdpAllow(address, uint256, address, uint256) public {
+    function cdpAllow(uint256, address, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function urnAllow(address, address, uint256) public {
+    function urnAllow(address, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
@@ -57,115 +57,90 @@ contract ProxyCalls {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function flux(address, uint256, address, uint256) public {
+    function flux(uint256, address, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function move(address, uint256, address, uint256) public {
+    function move(uint256, address, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function frob(address, uint256, int256, int256) public {
+    function frob(uint256, int256, int256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function frob(address, uint256, address, int256, int256) public {
+    function quit(uint256, address) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function quit(address, uint256, address) public {
+    function enter(address, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function enter(address, address, uint256) public {
+    function shift(uint256, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function shift(address, uint256, uint256) public {
-        proxy.execute(dssProxyActions, msg.data);
-    }
-
-    function lockETH(address, address, uint256) public payable {
+    function lockETH(address, uint256) public payable {
         (bool success,) = address(proxy).call{value: msg.value}(abi.encodeWithSignature("execute(address,bytes)", dssProxyActions, msg.data));
         require(success, "");
     }
 
-    function safeLockETH(address, address, uint256, address) public payable {
+    function safeLockETH(address, uint256, address) public payable {
         (bool success,) = address(proxy).call{value: msg.value}(abi.encodeWithSignature("execute(address,bytes)", dssProxyActions, msg.data));
         require(success, "");
     }
 
-    function lockGem(address, address, uint256, uint256) public {
+    function lockGem(address, uint256, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function safeLockGem(address, address, uint256, uint256, address) public {
+    function safeLockGem(address, uint256, uint256, address) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function makeGemBag(address) public returns (address bag) {
-        address payable target = address(proxy);
-        bytes memory data = abi.encodeWithSignature("execute(address,bytes)", dssProxyActions, msg.data);
-        assembly {
-            let succeeded := call(sub(gas(), 5000), target, callvalue(), add(data, 0x20), mload(data), 0, 0)
-            let size := returndatasize()
-            let response := mload(0x40)
-            mstore(0x40, add(response, and(add(add(size, 0x20), 0x1f), not(0x1f))))
-            mstore(response, size)
-            returndatacopy(add(response, 0x20), 0, size)
-
-            bag := mload(add(response, 0x60))
-
-            switch iszero(succeeded)
-            case 1 {
-                // throw if delegatecall failed
-                revert(add(response, 0x20), size)
-            }
-        }
-    }
-
-    function freeETH(address, address, uint256, uint256) public {
+    function freeETH(address, uint256, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function freeGem(address, address, uint256, uint256) public {
+    function freeGem(address, uint256, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function exitETH(address, address, uint256, uint256) public {
+    function exitETH(address, uint256, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function exitGem(address, address, uint256, uint256) public {
+    function exitGem(address, uint256, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function draw(address, address, address, uint256, uint256) public {
+    function draw(address, address, uint256, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function wipe(address, address, uint256, uint256) public {
+    function wipe(address, uint256, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function wipeAll(address, address, uint256) public {
+    function wipeAll(address, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function safeWipe(address, address, uint256, uint256, address) public {
+    function safeWipe(address, uint256, uint256, address) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function safeWipeAll(address, address, uint256, address) public {
+    function safeWipeAll(address, uint256, address) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function lockETHAndDraw(address, address, address, address, uint256, uint256) public payable {
+    function lockETHAndDraw(address, address, address, uint256, uint256) public payable {
         (bool success,) = address(proxy).call{value: msg.value}(abi.encodeWithSignature("execute(address,bytes)", dssProxyActions, msg.data));
         require(success, "");
     }
 
-    function openLockETHAndDraw(address, address, address, address, bytes32, uint256) public payable returns (uint256 cdp) {
+    function openLockETHAndDraw(address, address, address, bytes32, uint256) public payable returns (uint256 cdp) {
         address payable target = address(proxy);
         bytes memory data = abi.encodeWithSignature("execute(address,bytes)", dssProxyActions, msg.data);
         assembly {
@@ -186,39 +161,39 @@ contract ProxyCalls {
         }
     }
 
-    function lockGemAndDraw(address, address, address, address, uint256, uint256, uint256) public {
+    function lockGemAndDraw(address, address, address, uint256, uint256, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function openLockGemAndDraw(address, address, address, address, bytes32, uint256, uint256) public returns (uint256 cdp) {
+    function openLockGemAndDraw(address, address, address, bytes32, uint256, uint256) public returns (uint256 cdp) {
         bytes memory response = proxy.execute(dssProxyActions, msg.data);
         assembly {
             cdp := mload(add(response, 0x20))
         }
     }
 
-    function wipeAndFreeETH(address, address, address, uint256, uint256, uint256) public {
+    function wipeAndFreeETH(address, address, uint256, uint256, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function wipeAllAndFreeETH(address, address, address, uint256, uint256) public {
+    function wipeAllAndFreeETH(address, address, uint256, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function wipeAndFreeGem(address, address, address, uint256, uint256, uint256) public {
+    function wipeAndFreeGem(address, address, uint256, uint256, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function wipeAllAndFreeGem(address, address, address, uint256, uint256) public {
+    function wipeAllAndFreeGem(address, address, uint256, uint256) public {
         proxy.execute(dssProxyActions, msg.data);
     }
 
-    function end_freeETH(address a, address b, address c, uint256 d) public {
-        proxy.execute(dssProxyActionsEnd, abi.encodeWithSignature("freeETH(address,address,address,uint256)", a, b, c, d));
+    function end_freeETH(address a, address b, uint256 c) public {
+        proxy.execute(dssProxyActionsEnd, abi.encodeWithSignature("freeETH(address,address,uint256)", a, b, c));
     }
 
-    function end_freeGem(address a, address b, address c, uint256 d) public {
-        proxy.execute(dssProxyActionsEnd, abi.encodeWithSignature("freeGem(address,address,address,uint256)", a, b, c, d));
+    function end_freeGem(address a, address b, uint256 c) public {
+        proxy.execute(dssProxyActionsEnd, abi.encodeWithSignature("freeGem(address,address,uint256)", a, b, c));
     }
 
     function end_pack(address a, address b, uint256 c) public {
@@ -292,9 +267,9 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         manager = new DssCdpManager(address(vat));
         DSProxyFactory factory = new DSProxyFactory();
         registry = new ProxyRegistry(address(factory));
-        dssProxyActions = address(new DssProxyActions());
-        dssProxyActionsEnd = address(new DssProxyActionsEnd());
-        dssProxyActionsDsr = address(new DssProxyActionsDsr());
+        dssProxyActions = address(new DssProxyActions(address(vat), address(manager)));
+        dssProxyActionsEnd = address(new DssProxyActionsEnd(address(vat), address(manager)));
+        dssProxyActionsDsr = address(new DssProxyActionsDsr(address(vat)));
         proxy = DSProxy(registry.build());
     }
 
@@ -317,28 +292,28 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     }
 
     function testCreateCDP() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
+        uint256 cdp = this.open("ETH", address(proxy));
         assertEq(cdp, 1);
         assertEq(manager.owns(cdp), address(proxy));
     }
 
     function testGiveCDP() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.give(address(manager), cdp, address(123));
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.give(cdp, address(123));
         assertEq(manager.owns(cdp), address(123));
     }
 
     function testGiveCDPToProxy() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
+        uint256 cdp = this.open("ETH", address(proxy));
         address userProxy = registry.build(address(123));
-        this.giveToProxy(address(registry), address(manager), cdp, address(123));
+        this.giveToProxy(address(registry), cdp, address(123));
         assertEq(manager.owns(cdp), userProxy);
     }
 
     function testGiveCDPToNewProxy() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
+        uint256 cdp = this.open("ETH", address(proxy));
         assertEq(address(registry.proxies(address(123))), address(0));
-        this.giveToProxy(address(registry), address(manager), cdp, address(123));
+        this.giveToProxy(address(registry), cdp, address(123));
         DSProxy userProxy = registry.proxies(address(123));
         assertTrue(address(userProxy) != address(0));
         assertEq(userProxy.owner(), address(123));
@@ -346,30 +321,30 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     }
 
     function testFailGiveCDPToNewContractProxy() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
+        uint256 cdp = this.open("ETH", address(proxy));
         FakeUser user = new FakeUser();
         assertEq(address(registry.proxies(address(user))), address(0));
-        this.giveToProxy(address(registry), address(manager), cdp, address(user)); // Fails as user is a contract and not a regular address
+        this.giveToProxy(address(registry), cdp, address(user)); // Fails as user is a contract and not a regular address
     }
 
     function testGiveCDPAllowedUser() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
+        uint256 cdp = this.open("ETH", address(proxy));
         FakeUser user = new FakeUser();
-        this.cdpAllow(address(manager), cdp, address(user), 1);
+        this.cdpAllow(cdp, address(user), 1);
         user.doGive(manager, cdp, address(123));
         assertEq(manager.owns(cdp), address(123));
     }
 
     function testAllowUrn() public {
         assertEq(manager.urnCan(address(proxy), address(123)), 0);
-        this.urnAllow(address(manager), address(123), 1);
+        this.urnAllow(address(123), 1);
         assertEq(manager.urnCan(address(proxy), address(123)), 1);
-        this.urnAllow(address(manager), address(123), 0);
+        this.urnAllow(address(123), 0);
         assertEq(manager.urnCan(address(proxy), address(123)), 0);
     }
 
     function testFlux() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
+        uint256 cdp = this.open("ETH", address(proxy));
 
         assertEq(dai.balanceOf(address(this)), 0);
         realWeth.deposit{value: 1 ether}();
@@ -378,26 +353,26 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(vat.gem("ETH", address(this)), 0);
         assertEq(vat.gem("ETH", manager.urns(cdp)), 1 ether);
 
-        this.flux(address(manager), cdp, address(this), 0.75 ether);
+        this.flux(cdp, address(this), 0.75 ether);
 
         assertEq(vat.gem("ETH", address(this)), 0.75 ether);
         assertEq(vat.gem("ETH", manager.urns(cdp)), 0.25 ether);
     }
 
     function testFrob() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
+        uint256 cdp = this.open("ETH", address(proxy));
 
         assertEq(dai.balanceOf(address(this)), 0);
         realWeth.deposit{value: 1 ether}();
         realWeth.approve(address(ethJoin), uint256(-1));
         ethJoin.join(manager.urns(cdp), 1 ether);
 
-        this.frob(address(manager), cdp, 0.5 ether, 60 ether);
+        this.frob(cdp, 0.5 ether, 60 ether);
         assertEq(vat.gem("ETH", manager.urns(cdp)), 0.5 ether);
         assertEq(vat.dai(manager.urns(cdp)), mul(RAY, 60 ether));
         assertEq(vat.dai(address(this)), 0);
 
-        this.move(address(manager), cdp, address(this), mul(RAY, 60 ether));
+        this.move(cdp, address(this), mul(RAY, 60 ether));
         assertEq(vat.dai(manager.urns(cdp)), 0);
         assertEq(vat.dai(address(this)), mul(RAY, 60 ether));
 
@@ -408,122 +383,122 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
 
     function testLockETH() public {
         uint256 initialBalance = address(this).balance;
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
+        uint256 cdp = this.open("ETH", address(proxy));
         assertEq(ink("ETH", manager.urns(cdp)), 0);
-        this.lockETH{value: 2 ether}(address(manager), address(ethJoin), cdp);
+        this.lockETH{value: 2 ether}(address(ethJoin), cdp);
         assertEq(ink("ETH", manager.urns(cdp)), 2 ether);
         assertEq(address(this).balance, initialBalance - 2 ether);
     }
 
     function testSafeLockETH() public {
         uint256 initialBalance = address(this).balance;
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
+        uint256 cdp = this.open("ETH", address(proxy));
         assertEq(ink("ETH", manager.urns(cdp)), 0);
-        this.safeLockETH{value: 2 ether}(address(manager), address(ethJoin), cdp, address(proxy));
+        this.safeLockETH{value: 2 ether}(address(ethJoin), cdp, address(proxy));
         assertEq(ink("ETH", manager.urns(cdp)), 2 ether);
         assertEq(address(this).balance, initialBalance - 2 ether);
     }
 
     function testLockETHOtherCDPOwner() public {
         uint256 initialBalance = address(this).balance;
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.give(address(manager), cdp, address(123));
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.give(cdp, address(123));
         assertEq(ink("ETH", manager.urns(cdp)), 0);
-        this.lockETH{value: 2 ether}(address(manager), address(ethJoin), cdp);
+        this.lockETH{value: 2 ether}(address(ethJoin), cdp);
         assertEq(ink("ETH", manager.urns(cdp)), 2 ether);
         assertEq(address(this).balance, initialBalance - 2 ether);
     }
 
     function testFailSafeLockETHOtherCDPOwner() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.give(address(manager), cdp, address(123));
-        this.safeLockETH{value: 2 ether}(address(manager), address(ethJoin), cdp, address(321));
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.give(cdp, address(123));
+        this.safeLockETH{value: 2 ether}(address(ethJoin), cdp, address(321));
     }
 
     function testLockGem() public {
         col.mint(5 ether);
-        uint256 cdp = this.open(address(manager), "COL", address(proxy));
+        uint256 cdp = this.open("COL", address(proxy));
         col.approve(address(proxy), 2 ether);
         assertEq(ink("COL", manager.urns(cdp)), 0);
-        this.lockGem(address(manager), address(colJoin), cdp, 2 ether);
+        this.lockGem(address(colJoin), cdp, 2 ether);
         assertEq(ink("COL", manager.urns(cdp)), 2 ether);
         assertEq(col.balanceOf(address(this)), 3 ether);
     }
 
     function testSafeLockGem() public {
         col.mint(5 ether);
-        uint256 cdp = this.open(address(manager), "COL", address(proxy));
+        uint256 cdp = this.open("COL", address(proxy));
         col.approve(address(proxy), 2 ether);
         assertEq(ink("COL", manager.urns(cdp)), 0);
-        this.safeLockGem(address(manager), address(colJoin), cdp, 2 ether, address(proxy));
+        this.safeLockGem(address(colJoin), cdp, 2 ether, address(proxy));
         assertEq(ink("COL", manager.urns(cdp)), 2 ether);
         assertEq(col.balanceOf(address(this)), 3 ether);
     }
 
     function testLockGemDGD() public {
-        uint256 cdp = this.open(address(manager), "DGD", address(proxy));
+        uint256 cdp = this.open("DGD", address(proxy));
         dgd.approve(address(proxy), 2 * 10 ** 9);
         assertEq(ink("DGD", manager.urns(cdp)), 0);
         uint256 prevBalance = dgd.balanceOf(address(this));
-        this.lockGem(address(manager), address(dgdJoin), cdp, 2 * 10 ** 9);
+        this.lockGem(address(dgdJoin), cdp, 2 * 10 ** 9);
         assertEq(ink("DGD", manager.urns(cdp)),  2 ether);
         assertEq(dgd.balanceOf(address(this)), prevBalance - 2 * 10 ** 9);
     }
 
     function testLockGemOtherCDPOwner() public {
         col.mint(5 ether);
-        uint256 cdp = this.open(address(manager), "COL", address(proxy));
-        this.give(address(manager), cdp, address(123));
+        uint256 cdp = this.open("COL", address(proxy));
+        this.give(cdp, address(123));
         col.approve(address(proxy), 2 ether);
         assertEq(ink("COL", manager.urns(cdp)), 0);
-        this.lockGem(address(manager), address(colJoin), cdp, 2 ether);
+        this.lockGem(address(colJoin), cdp, 2 ether);
         assertEq(ink("COL", manager.urns(cdp)), 2 ether);
         assertEq(col.balanceOf(address(this)), 3 ether);
     }
 
     function testFailSafeLockGemOtherCDPOwner() public {
         col.mint(5 ether);
-        uint256 cdp = this.open(address(manager), "COL", address(proxy));
-        this.give(address(manager), cdp, address(123));
+        uint256 cdp = this.open("COL", address(proxy));
+        this.give(cdp, address(123));
         col.approve(address(proxy), 2 ether);
-        this.safeLockGem(address(manager), address(colJoin), cdp, 2 ether, address(321));
+        this.safeLockGem(address(colJoin), cdp, 2 ether, address(321));
     }
 
     function testFreeETH() public {
         uint256 initialBalance = address(this).balance;
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETH{value: 2 ether}(address(manager), address(ethJoin), cdp);
-        this.freeETH(address(manager), address(ethJoin), cdp, 1 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETH{value: 2 ether}(address(ethJoin), cdp);
+        this.freeETH(address(ethJoin), cdp, 1 ether);
         assertEq(ink("ETH", manager.urns(cdp)), 1 ether);
         assertEq(address(this).balance, initialBalance - 1 ether);
     }
 
     function testFreeGem() public {
         col.mint(5 ether);
-        uint256 cdp = this.open(address(manager), "COL", address(proxy));
+        uint256 cdp = this.open("COL", address(proxy));
         col.approve(address(proxy), 2 ether);
-        this.lockGem(address(manager), address(colJoin), cdp, 2 ether);
-        this.freeGem(address(manager), address(colJoin), cdp, 1 ether);
+        this.lockGem(address(colJoin), cdp, 2 ether);
+        this.freeGem(address(colJoin), cdp, 1 ether);
         assertEq(ink("COL", manager.urns(cdp)), 1 ether);
         assertEq(col.balanceOf(address(this)), 4 ether);
     }
 
     function testFreeGemDGD() public {
-        uint256 cdp = this.open(address(manager), "DGD", address(proxy));
+        uint256 cdp = this.open("DGD", address(proxy));
         dgd.approve(address(proxy), 2 * 10 ** 9);
         assertEq(ink("DGD", manager.urns(cdp)), 0);
         uint256 prevBalance = dgd.balanceOf(address(this));
-        this.lockGem(address(manager), address(dgdJoin), cdp, 2 * 10 ** 9);
-        this.freeGem(address(manager), address(dgdJoin), cdp, 1 * 10 ** 9);
+        this.lockGem(address(dgdJoin), cdp, 2 * 10 ** 9);
+        this.freeGem(address(dgdJoin), cdp, 1 * 10 ** 9);
         assertEq(ink("DGD", manager.urns(cdp)),  1 ether);
         assertEq(dgd.balanceOf(address(this)), prevBalance - 1 * 10 ** 9);
     }
 
     function testDraw() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETH{value: 2 ether}(address(manager), address(ethJoin), cdp);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETH{value: 2 ether}(address(ethJoin), cdp);
         assertEq(dai.balanceOf(address(this)), 0);
-        this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
+        this.draw(address(jug), address(daiJoin), cdp, 300 ether);
         assertEq(dai.balanceOf(address(this)), 300 ether);
         assertEq(art("ETH", manager.urns(cdp)), 300 ether);
     }
@@ -532,92 +507,92 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.file(address(jug), bytes32("ETH"), bytes32("duty"), uint256(1.05 * 10 ** 27));
         hevm.warp(now + 1);
         jug.drip("ETH"); // This is actually not necessary as `draw` will also call drip
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETH{value: 2 ether}(address(manager), address(ethJoin), cdp);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETH{value: 2 ether}(address(ethJoin), cdp);
         assertEq(dai.balanceOf(address(this)), 0);
-        this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
+        this.draw(address(jug), address(daiJoin), cdp, 300 ether);
         assertEq(dai.balanceOf(address(this)), 300 ether);
         assertEq(art("ETH", manager.urns(cdp)), mul(300 ether, RAY) / (1.05 * 10 ** 27) + 1); // Extra wei due rounding
     }
 
     function testWipe() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETH{value: 2 ether}(address(manager), address(ethJoin), cdp);
-        this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETH{value: 2 ether}(address(ethJoin), cdp);
+        this.draw(address(jug), address(daiJoin), cdp, 300 ether);
         dai.approve(address(proxy), 100 ether);
-        this.wipe(address(manager), address(daiJoin), cdp, 100 ether);
+        this.wipe(address(daiJoin), cdp, 100 ether);
         assertEq(dai.balanceOf(address(this)), 200 ether);
         assertEq(art("ETH", manager.urns(cdp)), 200 ether);
     }
 
     function testWipeAll() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETH{value: 2 ether}(address(manager), address(ethJoin), cdp);
-        this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETH{value: 2 ether}(address(ethJoin), cdp);
+        this.draw(address(jug), address(daiJoin), cdp, 300 ether);
         dai.approve(address(proxy), 300 ether);
-        this.wipeAll(address(manager), address(daiJoin), cdp);
+        this.wipeAll(address(daiJoin), cdp);
         assertEq(dai.balanceOf(address(this)), 0);
         assertEq(art("ETH", manager.urns(cdp)), 0);
     }
 
     function testSafeWipe() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETH{value: 2 ether}(address(manager), address(ethJoin), cdp);
-        this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETH{value: 2 ether}(address(ethJoin), cdp);
+        this.draw(address(jug), address(daiJoin), cdp, 300 ether);
         dai.approve(address(proxy), 100 ether);
-        this.safeWipe(address(manager), address(daiJoin), cdp, 100 ether, address(proxy));
+        this.safeWipe(address(daiJoin), cdp, 100 ether, address(proxy));
         assertEq(dai.balanceOf(address(this)), 200 ether);
         assertEq(art("ETH", manager.urns(cdp)), 200 ether);
     }
 
     function testSafeWipeAll() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETH{value: 2 ether}(address(manager), address(ethJoin), cdp);
-        this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETH{value: 2 ether}(address(ethJoin), cdp);
+        this.draw(address(jug), address(daiJoin), cdp, 300 ether);
         dai.approve(address(proxy), 300 ether);
-        this.safeWipeAll(address(manager), address(daiJoin), cdp, address(proxy));
+        this.safeWipeAll(address(daiJoin), cdp, address(proxy));
         assertEq(dai.balanceOf(address(this)), 0);
         assertEq(art("ETH", manager.urns(cdp)), 0);
     }
 
     function testWipeOtherCDPOwner() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETH{value: 2 ether}(address(manager), address(ethJoin), cdp);
-        this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETH{value: 2 ether}(address(ethJoin), cdp);
+        this.draw(address(jug), address(daiJoin), cdp, 300 ether);
         dai.approve(address(proxy), 100 ether);
-        this.give(address(manager), cdp, address(123));
-        this.wipe(address(manager), address(daiJoin), cdp, 100 ether);
+        this.give(cdp, address(123));
+        this.wipe(address(daiJoin), cdp, 100 ether);
         assertEq(dai.balanceOf(address(this)), 200 ether);
         assertEq(art("ETH", manager.urns(cdp)), 200 ether);
     }
 
     function testFailSafeWipeOtherCDPOwner() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETH{value: 2 ether}(address(manager), address(ethJoin), cdp);
-        this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETH{value: 2 ether}(address(ethJoin), cdp);
+        this.draw(address(jug), address(daiJoin), cdp, 300 ether);
         dai.approve(address(proxy), 100 ether);
-        this.give(address(manager), cdp, address(123));
-        this.safeWipe(address(manager), address(daiJoin), cdp, 100 ether, address(321));
+        this.give(cdp, address(123));
+        this.safeWipe(address(daiJoin), cdp, 100 ether, address(321));
     }
 
     function testFailSafeWipeAllOtherCDPOwner() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETH{value: 2 ether}(address(manager), address(ethJoin), cdp);
-        this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETH{value: 2 ether}(address(ethJoin), cdp);
+        this.draw(address(jug), address(daiJoin), cdp, 300 ether);
         dai.approve(address(proxy), 300 ether);
-        this.give(address(manager), cdp, address(123));
-        this.safeWipeAll(address(manager), address(daiJoin), cdp, address(321));
+        this.give(cdp, address(123));
+        this.safeWipeAll(address(daiJoin), cdp, address(321));
     }
 
     function testWipeAfterDrip() public {
         this.file(address(jug), bytes32("ETH"), bytes32("duty"), uint256(1.05 * 10 ** 27));
         hevm.warp(now + 1);
         jug.drip("ETH");
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETH{value: 2 ether}(address(manager), address(ethJoin), cdp);
-        this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETH{value: 2 ether}(address(ethJoin), cdp);
+        this.draw(address(jug), address(daiJoin), cdp, 300 ether);
         dai.approve(address(proxy), 100 ether);
-        this.wipe(address(manager), address(daiJoin), cdp, 100 ether);
+        this.wipe(address(daiJoin), cdp, 100 ether);
         assertEq(dai.balanceOf(address(this)), 200 ether);
         assertEq(art("ETH", manager.urns(cdp)), mul(200 ether, RAY) / (1.05 * 10 ** 27) + 1);
     }
@@ -626,11 +601,11 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.file(address(jug), bytes32("ETH"), bytes32("duty"), uint256(1.05 * 10 ** 27));
         hevm.warp(now + 1);
         jug.drip("ETH");
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETH{value: 2 ether}(address(manager), address(ethJoin), cdp);
-        this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETH{value: 2 ether}(address(ethJoin), cdp);
+        this.draw(address(jug), address(daiJoin), cdp, 300 ether);
         dai.approve(address(proxy), 300 ether);
-        this.wipe(address(manager), address(daiJoin), cdp, 300 ether);
+        this.wipe(address(daiJoin), cdp, 300 ether);
         assertEq(art("ETH", manager.urns(cdp)), 0);
     }
 
@@ -638,23 +613,23 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.file(address(jug), bytes32("ETH"), bytes32("duty"), uint256(1.05 * 10 ** 27));
         hevm.warp(now + 1);
         jug.drip("ETH"); // This is actually not necessary as `draw` will also call drip
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
+        uint256 cdp = this.open("ETH", address(proxy));
         uint256 times = 30;
-        this.lockETH{value: 2 ether * times}(address(manager), address(ethJoin), cdp);
+        this.lockETH{value: 2 ether * times}(address(ethJoin), cdp);
         for (uint256 i = 0; i < times; i++) {
-            this.draw(address(manager), address(jug), address(daiJoin), cdp, 300 ether);
+            this.draw(address(jug), address(daiJoin), cdp, 300 ether);
         }
         dai.approve(address(proxy), 300 ether * times);
-        this.wipe(address(manager), address(daiJoin), cdp, 300 ether * times);
+        this.wipe(address(daiJoin), cdp, 300 ether * times);
         assertEq(art("ETH", manager.urns(cdp)), 0);
     }
 
     function testLockETHAndDraw() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
+        uint256 cdp = this.open("ETH", address(proxy));
         uint256 initialBalance = address(this).balance;
         assertEq(ink("ETH", manager.urns(cdp)), 0);
         assertEq(dai.balanceOf(address(this)), 0);
-        this.lockETHAndDraw{value: 2 ether}(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 300 ether);
+        this.lockETHAndDraw{value: 2 ether}(address(jug), address(ethJoin), address(daiJoin), cdp, 300 ether);
         assertEq(ink("ETH", manager.urns(cdp)), 2 ether);
         assertEq(dai.balanceOf(address(this)), 300 ether);
         assertEq(address(this).balance, initialBalance - 2 ether);
@@ -663,7 +638,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     function testOpenLockETHAndDraw() public {
         uint256 initialBalance = address(this).balance;
         assertEq(dai.balanceOf(address(this)), 0);
-        uint256 cdp = this.openLockETHAndDraw{value: 2 ether}(address(manager), address(jug), address(ethJoin), address(daiJoin), "ETH", 300 ether);
+        uint256 cdp = this.openLockETHAndDraw{value: 2 ether}(address(jug), address(ethJoin), address(daiJoin), "ETH", 300 ether);
         assertEq(ink("ETH", manager.urns(cdp)), 2 ether);
         assertEq(dai.balanceOf(address(this)), 300 ether);
         assertEq(address(this).balance, initialBalance - 2 ether);
@@ -671,22 +646,22 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
 
     function testLockGemAndDraw() public {
         col.mint(5 ether);
-        uint256 cdp = this.open(address(manager), "COL", address(proxy));
+        uint256 cdp = this.open("COL", address(proxy));
         col.approve(address(proxy), 2 ether);
         assertEq(ink("COL", manager.urns(cdp)), 0);
         assertEq(dai.balanceOf(address(this)), 0);
-        this.lockGemAndDraw(address(manager), address(jug), address(colJoin), address(daiJoin), cdp, 2 ether, 10 ether);
+        this.lockGemAndDraw(address(jug), address(colJoin), address(daiJoin), cdp, 2 ether, 10 ether);
         assertEq(ink("COL", manager.urns(cdp)), 2 ether);
         assertEq(dai.balanceOf(address(this)), 10 ether);
         assertEq(col.balanceOf(address(this)), 3 ether);
     }
 
     function testLockGemDGDAndDraw() public {
-        uint256 cdp = this.open(address(manager), "DGD", address(proxy));
+        uint256 cdp = this.open("DGD", address(proxy));
         dgd.approve(address(proxy), 3 * 10 ** 9);
         assertEq(ink("DGD", manager.urns(cdp)), 0);
         uint256 prevBalance = dgd.balanceOf(address(this));
-        this.lockGemAndDraw(address(manager), address(jug), address(dgdJoin), address(daiJoin), cdp, 3 * 10 ** 9, 50 ether);
+        this.lockGemAndDraw(address(jug), address(dgdJoin), address(daiJoin), cdp, 3 * 10 ** 9, 50 ether);
         assertEq(ink("DGD", manager.urns(cdp)), 3 ether);
         assertEq(dai.balanceOf(address(this)), 50 ether);
         assertEq(dgd.balanceOf(address(this)), prevBalance - 3 * 10 ** 9);
@@ -696,18 +671,18 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         col.mint(5 ether);
         col.approve(address(proxy), 2 ether);
         assertEq(dai.balanceOf(address(this)), 0);
-        uint256 cdp = this.openLockGemAndDraw(address(manager), address(jug), address(colJoin), address(daiJoin), "COL", 2 ether, 10 ether);
+        uint256 cdp = this.openLockGemAndDraw(address(jug), address(colJoin), address(daiJoin), "COL", 2 ether, 10 ether);
         assertEq(ink("COL", manager.urns(cdp)), 2 ether);
         assertEq(dai.balanceOf(address(this)), 10 ether);
         assertEq(col.balanceOf(address(this)), 3 ether);
     }
 
     function testWipeAndFreeETH() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
+        uint256 cdp = this.open("ETH", address(proxy));
         uint256 initialBalance = address(this).balance;
-        this.lockETHAndDraw{value: 2 ether}(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 300 ether);
+        this.lockETHAndDraw{value: 2 ether}(address(jug), address(ethJoin), address(daiJoin), cdp, 300 ether);
         dai.approve(address(proxy), 250 ether);
-        this.wipeAndFreeETH(address(manager), address(ethJoin), address(daiJoin), cdp, 1.5 ether, 250 ether);
+        this.wipeAndFreeETH(address(ethJoin), address(daiJoin), cdp, 1.5 ether, 250 ether);
         assertEq(ink("ETH", manager.urns(cdp)), 0.5 ether);
         assertEq(art("ETH", manager.urns(cdp)), 50 ether);
         assertEq(dai.balanceOf(address(this)), 50 ether);
@@ -715,11 +690,11 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     }
 
     function testWipeAllAndFreeETH() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
+        uint256 cdp = this.open("ETH", address(proxy));
         uint256 initialBalance = address(this).balance;
-        this.lockETHAndDraw{value: 2 ether}(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 300 ether);
+        this.lockETHAndDraw{value: 2 ether}(address(jug), address(ethJoin), address(daiJoin), cdp, 300 ether);
         dai.approve(address(proxy), 300 ether);
-        this.wipeAllAndFreeETH(address(manager), address(ethJoin), address(daiJoin), cdp, 1.5 ether);
+        this.wipeAllAndFreeETH(address(ethJoin), address(daiJoin), cdp, 1.5 ether);
         assertEq(ink("ETH", manager.urns(cdp)), 0.5 ether);
         assertEq(art("ETH", manager.urns(cdp)), 0);
         assertEq(dai.balanceOf(address(this)), 0);
@@ -728,11 +703,11 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
 
     function testWipeAndFreeGem() public {
         col.mint(5 ether);
-        uint256 cdp = this.open(address(manager), "COL", address(proxy));
+        uint256 cdp = this.open("COL", address(proxy));
         col.approve(address(proxy), 2 ether);
-        this.lockGemAndDraw(address(manager), address(jug), address(colJoin), address(daiJoin), cdp, 2 ether, 10 ether);
+        this.lockGemAndDraw(address(jug), address(colJoin), address(daiJoin), cdp, 2 ether, 10 ether);
         dai.approve(address(proxy), 8 ether);
-        this.wipeAndFreeGem(address(manager), address(colJoin), address(daiJoin), cdp, 1.5 ether, 8 ether);
+        this.wipeAndFreeGem(address(colJoin), address(daiJoin), cdp, 1.5 ether, 8 ether);
         assertEq(ink("COL", manager.urns(cdp)), 0.5 ether);
         assertEq(art("COL", manager.urns(cdp)), 2 ether);
         assertEq(dai.balanceOf(address(this)), 2 ether);
@@ -741,11 +716,11 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
 
     function testWipeAllAndFreeGem() public {
         col.mint(5 ether);
-        uint256 cdp = this.open(address(manager), "COL", address(proxy));
+        uint256 cdp = this.open("COL", address(proxy));
         col.approve(address(proxy), 2 ether);
-        this.lockGemAndDraw(address(manager), address(jug), address(colJoin), address(daiJoin), cdp, 2 ether, 10 ether);
+        this.lockGemAndDraw(address(jug), address(colJoin), address(daiJoin), cdp, 2 ether, 10 ether);
         dai.approve(address(proxy), 10 ether);
-        this.wipeAllAndFreeGem(address(manager), address(colJoin), address(daiJoin), cdp, 1.5 ether);
+        this.wipeAllAndFreeGem(address(colJoin), address(daiJoin), cdp, 1.5 ether);
         assertEq(ink("COL", manager.urns(cdp)), 0.5 ether);
         assertEq(art("COL", manager.urns(cdp)), 0);
         assertEq(dai.balanceOf(address(this)), 0);
@@ -753,21 +728,21 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     }
 
     function testWipeAndFreeGemDGDAndDraw() public {
-        uint256 cdp = this.open(address(manager), "DGD", address(proxy));
+        uint256 cdp = this.open("DGD", address(proxy));
         dgd.approve(address(proxy), 3 * 10 ** 9);
         assertEq(ink("DGD", manager.urns(cdp)), 0);
         uint256 prevBalance = dgd.balanceOf(address(this));
-        this.lockGemAndDraw(address(manager), address(jug), address(dgdJoin), address(daiJoin), cdp, 3 * 10 ** 9, 50 ether);
+        this.lockGemAndDraw(address(jug), address(dgdJoin), address(daiJoin), cdp, 3 * 10 ** 9, 50 ether);
         dai.approve(address(proxy), 25 ether);
-        this.wipeAndFreeGem(address(manager), address(dgdJoin), address(daiJoin), cdp, 1 * 10 ** 9, 25 ether);
+        this.wipeAndFreeGem(address(dgdJoin), address(daiJoin), cdp, 1 * 10 ** 9, 25 ether);
         assertEq(ink("DGD", manager.urns(cdp)), 2 ether);
         assertEq(dai.balanceOf(address(this)), 25 ether);
         assertEq(dgd.balanceOf(address(this)), prevBalance - 2 * 10 ** 9);
     }
 
     function testPreventHigherDaiOnWipe() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETHAndDraw{value: 2 ether}(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 300 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETHAndDraw{value: 2 ether}(address(jug), address(ethJoin), address(daiJoin), cdp, 300 ether);
 
         realWeth.deposit{value: 2 ether}();
         realWeth.approve(address(ethJoin), 2 ether);
@@ -776,7 +751,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         vat.move(address(this), manager.urns(cdp), 150 ether);
 
         dai.approve(address(proxy), 300 ether);
-        this.wipe(address(manager), address(daiJoin), cdp, 300 ether);
+        this.wipe(address(daiJoin), cdp, 300 ether);
     }
 
     function testHopeNope() public {
@@ -788,8 +763,8 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     }
 
     function testQuit() public {
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETHAndDraw{value: 1 ether}(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETHAndDraw{value: 1 ether}(address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
 
         assertEq(ink("ETH", manager.urns(cdp)), 1 ether);
         assertEq(art("ETH", manager.urns(cdp)), 50 ether);
@@ -797,7 +772,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(art("ETH", address(proxy)), 0);
 
         this.hope(address(vat), address(manager));
-        this.quit(address(manager), cdp, address(proxy));
+        this.quit(cdp, address(proxy));
 
         assertEq(ink("ETH", manager.urns(cdp)), 0);
         assertEq(art("ETH", manager.urns(cdp)), 0);
@@ -810,7 +785,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         realWeth.approve(address(ethJoin), 1 ether);
         ethJoin.join(address(this), 1 ether);
         vat.frob("ETH", address(this), address(this), address(this), 1 ether, 50 ether);
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
+        uint256 cdp = this.open("ETH", address(proxy));
 
         assertEq(ink("ETH", manager.urns(cdp)), 0);
         assertEq(art("ETH", manager.urns(cdp)), 0);
@@ -819,7 +794,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
 
         vat.hope(address(manager));
         manager.urnAllow(address(proxy), 1);
-        this.enter(address(manager), address(this), cdp);
+        this.enter(address(this), cdp);
 
         assertEq(ink("ETH", manager.urns(cdp)), 1 ether);
         assertEq(art("ETH", manager.urns(cdp)), 50 ether);
@@ -828,17 +803,17 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
     }
 
     function testShift() public {
-        uint256 cdpSrc = this.open(address(manager), "ETH", address(proxy));
-        this.lockETHAndDraw{value: 1 ether}(address(manager), address(jug), address(ethJoin), address(daiJoin), cdpSrc, 50 ether);
+        uint256 cdpSrc = this.open("ETH", address(proxy));
+        this.lockETHAndDraw{value: 1 ether}(address(jug), address(ethJoin), address(daiJoin), cdpSrc, 50 ether);
 
-        uint256 cdpDst = this.open(address(manager), "ETH", address(proxy));
+        uint256 cdpDst = this.open("ETH", address(proxy));
 
         assertEq(ink("ETH", manager.urns(cdpSrc)), 1 ether);
         assertEq(art("ETH", manager.urns(cdpSrc)), 50 ether);
         assertEq(ink("ETH", manager.urns(cdpDst)), 0);
         assertEq(art("ETH", manager.urns(cdpDst)), 0);
 
-        this.shift(address(manager), cdpSrc, cdpDst);
+        this.shift(cdpSrc, cdpDst);
 
         assertEq(ink("ETH", manager.urns(cdpSrc)), 0);
         assertEq(art("ETH", manager.urns(cdpSrc)), 0);
@@ -851,8 +826,8 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.file(address(cat), "box", rad(1000 ether)); // 1000 units of DAI max
         this.file(address(cat), "ETH", "chop", WAD);
 
-        cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETHAndDraw{value: 1 ether}(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 200 ether); // Maximun DAI generated
+        cdp = this.open("ETH", address(proxy));
+        this.lockETHAndDraw{value: 1 ether}(address(jug), address(ethJoin), address(daiJoin), cdp, 200 ether); // Maximun DAI generated
         pipETH.poke(bytes32(uint256(300 * 10 ** 18 - 1))); // Force liquidation
         spotter.poke("ETH");
         uint256 batchId = cat.bite("ETH", manager.urns(cdp));
@@ -879,7 +854,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         uint256 cdp = _flipETH();
         assertEq(vat.gem("ETH", manager.urns(cdp)), 0.3 ether);
         uint256 prevBalance = address(this).balance;
-        this.exitETH(address(manager), address(ethJoin), cdp, 0.3 ether);
+        this.exitETH(address(ethJoin), cdp, 0.3 ether);
         assertEq(vat.gem("ETH", manager.urns(cdp)), 0);
         assertEq(address(this).balance, prevBalance + 0.3 ether);
     }
@@ -890,9 +865,9 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.file(address(cat), "COL", "chop", WAD);
 
         col.mint(1 ether);
-        uint256 cdp = this.open(address(manager), "COL", address(proxy));
+        uint256 cdp = this.open("COL", address(proxy));
         col.approve(address(proxy), 1 ether);
-        this.lockGemAndDraw(address(manager), address(jug), address(colJoin), address(daiJoin), cdp, 1 ether, 40 ether);
+        this.lockGemAndDraw(address(jug), address(colJoin), address(daiJoin), cdp, 1 ether, 40 ether);
 
         pipCOL.poke(bytes32(uint256(40 * 10 ** 18))); // Force liquidation
         spotter.poke("COL");
@@ -916,7 +891,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         user2.doDent(address(colFlip), batchId, 0.7 ether, rad(40 ether));
         assertEq(vat.gem("COL", manager.urns(cdp)), 0.3 ether);
         assertEq(col.balanceOf(address(this)), 0);
-        this.exitGem(address(manager), address(colJoin), cdp, 0.3 ether);
+        this.exitGem(address(colJoin), cdp, 0.3 ether);
         assertEq(vat.gem("COL", manager.urns(cdp)), 0);
         assertEq(col.balanceOf(address(this)), 0.3 ether);
     }
@@ -926,9 +901,9 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.file(address(cat), "box", rad(1000 ether)); // 1000 units of DAI max
         this.file(address(cat), "DGD", "chop", WAD);
 
-        uint256 cdp = this.open(address(manager), "DGD", address(proxy));
+        uint256 cdp = this.open("DGD", address(proxy));
         dgd.approve(address(proxy), 1 * 10 ** 9);
-        this.lockGemAndDraw(address(manager), address(jug), address(dgdJoin), address(daiJoin), cdp, 1 * 10 ** 9, 30 ether);
+        this.lockGemAndDraw(address(jug), address(dgdJoin), address(daiJoin), cdp, 1 * 10 ** 9, 30 ether);
 
         pipDGD.poke(bytes32(uint256(40 * 10 ** 18))); // Force liquidation
         spotter.poke("DGD");
@@ -952,7 +927,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         user2.doDent(address(dgdFlip), batchId, 0.7 ether, rad(30 ether));
         assertEq(vat.gem("DGD", manager.urns(cdp)), 0.3 ether);
         uint256 prevBalance = dgd.balanceOf(address(this));
-        this.exitGem(address(manager), address(dgdJoin), cdp, 0.3 * 10 ** 9);
+        this.exitGem(address(dgdJoin), cdp, 0.3 * 10 ** 9);
         assertEq(vat.gem("DGD", manager.urns(cdp)), 0);
         assertEq(dgd.balanceOf(address(this)), prevBalance + 0.3 * 10 ** 9);
     }
@@ -962,19 +937,19 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         (uint256 inkV,) = vat.urns("ETH", manager.urns(cdp));
         assertEq(inkV, 0);
         assertEq(vat.gem("ETH", manager.urns(cdp)), 0.3 ether);
-        this.frob(address(manager), cdp, 0.3 ether, 0);
+        this.frob(cdp, 0.3 ether, 0);
         (inkV,) = vat.urns("ETH", manager.urns(cdp));
         assertEq(inkV, 0.3 ether);
         assertEq(vat.gem("ETH", manager.urns(cdp)), 0);
     }
 
     function testEnd() public {
-        uint256 cdp = this.openLockETHAndDraw{value: 2 ether}(address(manager), address(jug), address(ethJoin), address(daiJoin), "ETH", 300 ether);
+        uint256 cdp = this.openLockETHAndDraw{value: 2 ether}(address(jug), address(ethJoin), address(daiJoin), "ETH", 300 ether);
         col.mint(1 ether);
         col.approve(address(proxy), 1 ether);
-        uint256 cdp2 = this.openLockGemAndDraw(address(manager), address(jug), address(colJoin), address(daiJoin), "COL", 1 ether, 5 ether);
+        uint256 cdp2 = this.openLockGemAndDraw(address(jug), address(colJoin), address(daiJoin), "COL", 1 ether, 5 ether);
         dgd.approve(address(proxy), 1 * 10 ** 9);
-        uint256 cdp3 = this.openLockGemAndDraw(address(manager), address(jug), address(dgdJoin), address(daiJoin), "DGD", 1 * 10 ** 9, 5 ether);
+        uint256 cdp3 = this.openLockGemAndDraw(address(jug), address(dgdJoin), address(daiJoin), "DGD", 1 * 10 ** 9, 5 ether);
 
         this.cage(address(end));
         end.cage("ETH");
@@ -994,7 +969,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(artV, 5 ether);
 
         uint256 prevBalanceETH = address(this).balance;
-        this.end_freeETH(address(manager), address(ethJoin), address(end), cdp);
+        this.end_freeETH(address(ethJoin), address(end), cdp);
         (inkV, artV) = vat.urns("ETH", manager.urns(cdp));
         assertEq(inkV, 0);
         assertEq(artV, 0);
@@ -1002,7 +977,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(address(this).balance, prevBalanceETH + remainInkVal);
 
         uint256 prevBalanceCol = col.balanceOf(address(this));
-        this.end_freeGem(address(manager), address(colJoin), address(end), cdp2);
+        this.end_freeGem(address(colJoin), address(end), cdp2);
         (inkV, artV) = vat.urns("COL", manager.urns(cdp2));
         assertEq(inkV, 0);
         assertEq(artV, 0);
@@ -1010,7 +985,7 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(col.balanceOf(address(this)), prevBalanceCol + remainInkVal);
 
         uint256 prevBalanceDGD = dgd.balanceOf(address(this));
-        this.end_freeGem(address(manager), address(dgdJoin), address(end), cdp3);
+        this.end_freeGem(address(dgdJoin), address(end), cdp3);
         (inkV, artV) = vat.urns("DGD", manager.urns(cdp3));
         assertEq(inkV, 0);
         assertEq(artV, 0);
@@ -1039,8 +1014,8 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.file(address(pot), "dsr", uint256(1.05 * 10 ** 27)); // 5% per second
         uint256 initialTime = 0; // Initial time set to 0 to avoid any intial rounding
         hevm.warp(initialTime);
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETHAndDraw{value: 1 ether}(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETHAndDraw{value: 1 ether}(address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
         dai.approve(address(proxy), 50 ether);
         assertEq(dai.balanceOf(address(this)), 50 ether);
         assertEq(pot.pie(address(this)), 0 ether);
@@ -1060,8 +1035,8 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.file(address(pot), "dsr", uint256(1.05 * 10 ** 27));
         uint256 initialTime = 1; // Initial time set to 1 this way some the pie will not be the same than the initial DAI wad amount
         hevm.warp(initialTime);
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETHAndDraw{value: 1 ether}(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETHAndDraw{value: 1 ether}(address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
         dai.approve(address(proxy), 50 ether);
         assertEq(dai.balanceOf(address(this)), 50 ether);
         assertEq(pot.pie(address(this)), 0 ether);
@@ -1082,8 +1057,8 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.file(address(pot), "dsr", uint256(1.03434234324 * 10 ** 27));
         uint256 initialTime = 1;
         hevm.warp(initialTime);
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETHAndDraw{value: 1 ether}(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETHAndDraw{value: 1 ether}(address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
         dai.approve(address(proxy), 50 ether);
         assertEq(dai.balanceOf(address(this)), 50 ether);
         assertEq(pot.pie(address(this)), 0 ether);
@@ -1101,8 +1076,8 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         this.file(address(pot), "dsr", uint256(1.03434234324 * 10 ** 27));
         uint256 initialTime = 1;
         hevm.warp(initialTime);
-        uint256 cdp = this.open(address(manager), "ETH", address(proxy));
-        this.lockETHAndDraw{value: 1 ether}(address(manager), address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
+        uint256 cdp = this.open("ETH", address(proxy));
+        this.lockETHAndDraw{value: 1 ether}(address(jug), address(ethJoin), address(daiJoin), cdp, 50 ether);
         this.nope(address(vat), address(daiJoin)); // Remove vat permission for daiJoin to test it is correctly re-activate in exitAll
         dai.approve(address(proxy), 50 ether);
         this.dsr_join(address(daiJoin), address(pot), 50 ether);
