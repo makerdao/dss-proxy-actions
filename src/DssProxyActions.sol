@@ -590,7 +590,7 @@ contract DssProxyActions is Common {
         uint256 amt,
         address owner
     ) public {
-        require(ManagerLike(manager).owns(cdp) == owner, "owner-missmatch");
+        require(manager.owns(cdp) == owner, "owner-missmatch");
         lockGem(gemJoin, cdp, amt);
     }
 
@@ -734,8 +734,8 @@ contract DssProxyActions is Common {
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
         move(cdp, address(this), _toRad(wad));
         // Allows adapter to access to proxy's DAI balance in the vat
-        if (VatLike(vat).can(address(this), address(daiJoin)) == 0) {
-            VatLike(vat).hope(daiJoin);
+        if (vat.can(address(this), address(daiJoin)) == 0) {
+            vat.hope(daiJoin);
         }
         // Exits DAI to the user's wallet as a token
         DaiJoinLike(daiJoin).exit(msg.sender, wad);
@@ -1260,7 +1260,6 @@ contract DssProxyActionsEnd is Common {
         uint256 wad
     ) public {
         daiJoin_join(daiJoin, address(this), wad);
-        VatLike vat = DaiJoinLike(daiJoin).vat();
         // Approves the end to take out DAI from the proxy's balance in the vat
         if (vat.can(address(this), address(end)) == 0) {
             vat.hope(end);
