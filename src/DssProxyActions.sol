@@ -238,12 +238,6 @@ contract DssProxyActions is Common {
         GemJoinLike(ethJoin).join(urn, msg.value);
     }
 
-    // Deprecated
-    function gemJoin_join(address gemJoin, address urn, uint256 amt, bool) public {
-        gemJoin_join(gemJoin, urn, amt);
-    }
-    //
-
     function gemJoin_join(address gemJoin, address urn, uint256 amt) public {
         GemLike gem = GemJoinLike(gemJoin).gem();
         // Gets token from the user's wallet
@@ -268,17 +262,6 @@ contract DssProxyActions is Common {
         HopeLike(obj).nope(usr);
     }
 
-    // Deprecated
-    function open(
-        address manager_,
-        bytes32 ilk,
-        address usr
-    ) public returns (uint256 cdp) {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        cdp = open(ilk, usr);
-    }
-    //
-
     function open(
         bytes32 ilk,
         address usr
@@ -286,35 +269,12 @@ contract DssProxyActions is Common {
         cdp = manager.open(ilk, usr);
     }
 
-    // Deprecated
-    function give(
-        address manager_,
-        uint256 cdp,
-        address usr
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        give(cdp, usr);
-    }
-    //
-
     function give(
         uint256 cdp,
         address usr
     ) public {
         manager.give(cdp, usr);
     }
-
-    // Deprecated
-    function giveToProxy(
-        address proxyRegistry,
-        address manager_,
-        uint256 cdp,
-        address dst
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        giveToProxy(proxyRegistry, cdp, dst);
-    }
-    //
 
     function giveToProxy(
         address proxyRegistry,
@@ -338,18 +298,6 @@ contract DssProxyActions is Common {
         give(cdp, proxy);
     }
 
-    // Deprecated
-    function cdpAllow(
-        address manager_,
-        uint256 cdp,
-        address usr,
-        uint256 ok
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        cdpAllow(cdp, usr, ok);
-    }
-    //
-
     function cdpAllow(
         uint256 cdp,
         address usr,
@@ -358,35 +306,12 @@ contract DssProxyActions is Common {
         manager.cdpAllow(cdp, usr, ok);
     }
 
-    // Deprecated
-    function urnAllow(
-        address manager_,
-        address usr,
-        uint256 ok
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        urnAllow(usr, ok);
-    }
-    //
-
     function urnAllow(
         address usr,
         uint256 ok
     ) public {
         manager.urnAllow(usr, ok);
     }
-
-    // Deprecated
-    function flux(
-        address manager_,
-        uint256 cdp,
-        address dst,
-        uint256 wad
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        flux(cdp, dst, wad);
-    }
-    //
 
     function flux(
         uint256 cdp,
@@ -396,18 +321,6 @@ contract DssProxyActions is Common {
         manager.flux(cdp, dst, wad);
     }
 
-    // Deprecated
-    function move(
-        address manager_,
-        uint256 cdp,
-        address dst,
-        uint256 rad
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        move(cdp, dst, rad);
-    }
-    //
-
     function move(
         uint256 cdp,
         address dst,
@@ -415,18 +328,6 @@ contract DssProxyActions is Common {
     ) public {
         manager.move(cdp, dst, rad);
     }
-
-    // Deprecated
-    function frob(
-        address manager_,
-        uint256 cdp,
-        int256 dink,
-        int256 dart
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        frob(cdp, dink, dart);
-    }
-    //
 
     function frob(
         uint256 cdp,
@@ -436,34 +337,12 @@ contract DssProxyActions is Common {
         manager.frob(cdp, dink, dart);
     }
 
-    // Deprecated
-    function quit(
-        address manager_,
-        uint256 cdp,
-        address dst
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        quit(cdp, dst);
-    }
-    //
-
     function quit(
         uint256 cdp,
         address dst
     ) public {
         manager.quit(cdp, dst);
     }
-
-    // Deprecated
-    function enter(
-        address manager_,
-        address src,
-        uint256 cdp
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        enter(src, cdp);
-    }
-    //
 
     function enter(
         address src,
@@ -472,34 +351,12 @@ contract DssProxyActions is Common {
         manager.enter(src, cdp);
     }
 
-    // Deprecated
-    function shift(
-        address manager_,
-        uint256 cdpSrc,
-        uint256 cdpOrg
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        shift(cdpSrc, cdpOrg);
-    }
-    //
-
     function shift(
         uint256 cdpSrc,
         uint256 cdpOrg
     ) public {
         manager.shift(cdpSrc, cdpOrg);
     }
-
-    // Deprecated
-    function lockETH(
-        address manager_,
-        address ethJoin,
-        uint256 cdp
-    ) public payable {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        lockETH(ethJoin, cdp);
-    }
-    //
 
     function lockETH(
         address ethJoin,
@@ -518,18 +375,6 @@ contract DssProxyActions is Common {
         );
     }
 
-    // Deprecated
-    function safeLockETH(
-        address manager_,
-        address ethJoin,
-        uint256 cdp,
-        address owner
-    ) public payable {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        safeLockETH(ethJoin, cdp, owner);
-    }
-    //
-
     function safeLockETH(
         address ethJoin,
         uint256 cdp,
@@ -538,19 +383,6 @@ contract DssProxyActions is Common {
         require(manager.owns(cdp) == owner, "owner-missmatch");
         lockETH(ethJoin, cdp);
     }
-
-    // Deprecated
-    function lockGem(
-        address manager_,
-        address gemJoin,
-        uint256 cdp,
-        uint256 amt,
-        bool
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        lockGem(gemJoin, cdp, amt);
-    }
-    //
 
     function lockGem(
         address gemJoin,
@@ -570,20 +402,6 @@ contract DssProxyActions is Common {
         );
     }
 
-    // Deprecated
-    function safeLockGem(
-        address manager_,
-        address gemJoin,
-        uint256 cdp,
-        uint256 amt,
-        bool,
-        address owner
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        safeLockGem(gemJoin, cdp, amt, owner);
-    }
-    //
-
     function safeLockGem(
         address gemJoin,
         uint256 cdp,
@@ -593,18 +411,6 @@ contract DssProxyActions is Common {
         require(manager.owns(cdp) == owner, "owner-missmatch");
         lockGem(gemJoin, cdp, amt);
     }
-
-    // Deprecated
-    function freeETH(
-        address manager_,
-        address ethJoin,
-        uint256 cdp,
-        uint256 wad
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        freeETH(ethJoin, cdp, wad);
-    }
-    //
 
     function freeETH(
         address ethJoin,
@@ -623,18 +429,6 @@ contract DssProxyActions is Common {
         msg.sender.transfer(wad);
     }
 
-    // Deprecated
-    function freeGem(
-        address manager_,
-        address gemJoin,
-        uint256 cdp,
-        uint256 amt
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        freeGem(gemJoin, cdp, amt);
-    }
-    //
-
     function freeGem(
         address gemJoin,
         uint256 cdp,
@@ -648,18 +442,6 @@ contract DssProxyActions is Common {
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, amt);
     }
-
-    // Deprecated
-    function exitETH(
-        address manager_,
-        address ethJoin,
-        uint256 cdp,
-        uint256 wad
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        exitETH(ethJoin, cdp, wad);
-    }
-    //
 
     function exitETH(
         address ethJoin,
@@ -677,18 +459,6 @@ contract DssProxyActions is Common {
         msg.sender.transfer(wad);
     }
 
-    // Deprecated
-    function exitGem(
-        address manager_,
-        address gemJoin,
-        uint256 cdp,
-        uint256 amt
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        exitGem(gemJoin, cdp, amt);
-    }
-    //
-
     function exitGem(
         address gemJoin,
         uint256 cdp,
@@ -700,19 +470,6 @@ contract DssProxyActions is Common {
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, amt);
     }
-
-    // Deprecated
-    function draw(
-        address manager_,
-        address jug,
-        address daiJoin,
-        uint256 cdp,
-        uint256 wad
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        draw(jug, daiJoin, cdp, wad);
-    }
-    //
 
     function draw(
         address jug,
@@ -740,18 +497,6 @@ contract DssProxyActions is Common {
         // Exits DAI to the user's wallet as a token
         DaiJoinLike(daiJoin).exit(msg.sender, wad);
     }
-
-    // Deprecated
-    function wipe(
-        address manager_,
-        address daiJoin,
-        uint256 cdp,
-        uint256 wad
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        wipe(daiJoin, cdp, wad);
-    }
-    //
 
     function wipe(
         address daiJoin,
@@ -782,19 +527,6 @@ contract DssProxyActions is Common {
         }
     }
 
-    // Deprecated
-    function safeWipe(
-        address manager_,
-        address daiJoin,
-        uint256 cdp,
-        uint256 wad,
-        address owner
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        safeWipe(daiJoin, cdp, wad, owner);
-    }
-    //
-
     function safeWipe(
         address daiJoin,
         uint256 cdp,
@@ -804,17 +536,6 @@ contract DssProxyActions is Common {
         require(manager.owns(cdp) == owner, "owner-missmatch");
         wipe(daiJoin, cdp, wad);
     }
-
-    // Deprecated
-    function wipeAll(
-        address manager_,
-        address daiJoin,
-        uint256 cdp
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        wipeAll(daiJoin, cdp);
-    }
-    //
 
     function wipeAll(
         address daiJoin,
@@ -845,18 +566,6 @@ contract DssProxyActions is Common {
         }
     }
 
-    // Deprecated
-    function safeWipeAll(
-        address manager_,
-        address daiJoin,
-        uint256 cdp,
-        address owner
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        safeWipeAll(daiJoin, cdp, owner);
-    }
-    //
-
     function safeWipeAll(
         address daiJoin,
         uint256 cdp,
@@ -865,20 +574,6 @@ contract DssProxyActions is Common {
         require(manager.owns(cdp) == owner, "owner-missmatch");
         wipeAll(daiJoin, cdp);
     }
-
-    // Deprecated
-    function lockETHAndDraw(
-        address manager_,
-        address jug,
-        address ethJoin,
-        address daiJoin,
-        uint256 cdp,
-        uint256 wadD
-    ) public payable {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        lockETHAndDraw(jug, ethJoin, daiJoin, cdp, wadD);
-    }
-    //
 
     function lockETHAndDraw(
         address jug,
@@ -912,20 +607,6 @@ contract DssProxyActions is Common {
         DaiJoinLike(daiJoin).exit(msg.sender, wadD);
     }
 
-    // Deprecated
-    function openLockETHAndDraw(
-        address manager_,
-        address jug,
-        address ethJoin,
-        address daiJoin,
-        bytes32 ilk,
-        uint256 wadD
-    ) public payable returns (uint256 cdp) {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        cdp = openLockETHAndDraw(jug, ethJoin, daiJoin, ilk, wadD);
-    }
-    //
-
     function openLockETHAndDraw(
         address jug,
         address ethJoin,
@@ -936,22 +617,6 @@ contract DssProxyActions is Common {
         cdp = open(ilk, address(this));
         lockETHAndDraw(jug, ethJoin, daiJoin, cdp, wadD);
     }
-
-    // Deprecated
-    function lockGemAndDraw(
-        address manager_,
-        address jug,
-        address gemJoin,
-        address daiJoin,
-        uint256 cdp,
-        uint256 amtC,
-        uint256 wadD,
-        bool
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        lockGemAndDraw(jug, gemJoin, daiJoin, cdp, amtC, wadD);
-    }
-    //
 
     function lockGemAndDraw(
         address jug,
@@ -986,22 +651,6 @@ contract DssProxyActions is Common {
         DaiJoinLike(daiJoin).exit(msg.sender, wadD);
     }
 
-    // Deprecated
-    function openLockGemAndDraw(
-        address manager_,
-        address jug,
-        address gemJoin,
-        address daiJoin,
-        bytes32 ilk,
-        uint256 amtC,
-        uint256 wadD,
-        bool
-    ) public returns (uint256 cdp) {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        cdp = openLockGemAndDraw(jug, gemJoin, daiJoin, ilk, amtC, wadD);
-    }
-    //
-
     function openLockGemAndDraw(
         address jug,
         address gemJoin,
@@ -1013,20 +662,6 @@ contract DssProxyActions is Common {
         cdp = open(ilk, address(this));
         lockGemAndDraw(jug, gemJoin, daiJoin, cdp, amtC, wadD);
     }
-
-    // Deprecated
-    function wipeAndFreeETH(
-        address manager_,
-        address ethJoin,
-        address daiJoin,
-        uint256 cdp,
-        uint256 wadC,
-        uint256 wadD
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        wipeAndFreeETH(ethJoin, daiJoin, cdp, wadC, wadD);
-    }
-    //
 
     function wipeAndFreeETH(
         address ethJoin,
@@ -1053,19 +688,6 @@ contract DssProxyActions is Common {
         // Sends ETH back to the user's wallet
         msg.sender.transfer(wadC);
     }
-
-    // Deprecated
-    function wipeAllAndFreeETH(
-        address manager_,
-        address ethJoin,
-        address daiJoin,
-        uint256 cdp,
-        uint256 wadC
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        wipeAllAndFreeETH(ethJoin, daiJoin, cdp, wadC);
-    }
-    //
 
     function wipeAllAndFreeETH(
         address ethJoin,
@@ -1095,20 +717,6 @@ contract DssProxyActions is Common {
         msg.sender.transfer(wadC);
     }
 
-    // Deprecated
-    function wipeAndFreeGem(
-        address manager_,
-        address gemJoin,
-        address daiJoin,
-        uint256 cdp,
-        uint256 amtC,
-        uint256 wadD
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        wipeAndFreeGem(gemJoin, daiJoin, cdp, amtC, wadD);
-    }
-    //
-
     function wipeAndFreeGem(
         address gemJoin,
         address daiJoin,
@@ -1131,19 +739,6 @@ contract DssProxyActions is Common {
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, amtC);
     }
-
-    // Deprecated
-    function wipeAllAndFreeGem(
-        address manager_,
-        address gemJoin,
-        address daiJoin,
-        uint256 cdp,
-        uint256 amtC
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        wipeAllAndFreeGem(gemJoin, daiJoin, cdp, amtC);
-    }
-    //
 
     function wipeAllAndFreeGem(
         address gemJoin,
@@ -1206,18 +801,6 @@ contract DssProxyActionsEnd is Common {
 
     // Public functions
 
-    // Deprecated
-    function freeETH(
-        address manager_,
-        address ethJoin,
-        address end,
-        uint256 cdp
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        freeETH(ethJoin, end, cdp);
-    }
-    //
-
     function freeETH(
         address ethJoin,
         address end,
@@ -1231,18 +814,6 @@ contract DssProxyActionsEnd is Common {
         // Sends ETH back to the user's wallet
         msg.sender.transfer(wad);
     }
-
-    // Deprecated
-    function freeGem(
-        address manager_,
-        address gemJoin,
-        address end,
-        uint256 cdp
-    ) public {
-        require(manager_ == address(manager), "DssProxyActions/Non-matching-manager");
-        freeGem(gemJoin, end, cdp);
-    }
-    //
 
     function freeGem(
         address gemJoin,
