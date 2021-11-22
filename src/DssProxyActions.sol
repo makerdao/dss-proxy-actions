@@ -110,7 +110,7 @@ interface ProxyLike {
 contract Common {
     uint256 constant RAY = 10 ** 27;
 
-    VatLike     immutable vat;
+    VatLike immutable public vat;
 
     constructor(address vat_) public {
         vat = VatLike(vat_);
@@ -136,7 +136,7 @@ contract Common {
 }
 
 contract DssProxyActions is Common {
-    ManagerLike immutable manager;
+    ManagerLike immutable public manager;
 
     constructor(address vat_, address manager_) public Common(vat_) {
         manager = ManagerLike(manager_);
@@ -767,7 +767,7 @@ contract DssProxyActions is Common {
 }
 
 contract DssProxyActionsEnd is Common {
-    ManagerLike immutable manager;
+    ManagerLike immutable public manager;
 
     constructor(address vat_, address manager_) public Common(vat_) {
         manager = ManagerLike(manager_);
