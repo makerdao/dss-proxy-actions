@@ -110,6 +110,12 @@ interface ProxyLike {
 contract Common {
     uint256 constant RAY = 10 ** 27;
 
+    VatLike immutable public vat;
+
+    constructor(address vat_) public {
+        vat = VatLike(vat_);
+    }
+
     // Internal functions
 
     function _mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
@@ -130,6 +136,12 @@ contract Common {
 }
 
 contract DssProxyActions is Common {
+    ManagerLike immutable public manager;
+
+    constructor(address vat_, address manager_) public Common(vat_) {
+        manager = ManagerLike(manager_);
+    }
+
     // Internal functions
 
     function _sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
@@ -155,7 +167,6 @@ contract DssProxyActions is Common {
     }
 
     function _getDrawDart(
-        address vat,
         address jug,
         address urn,
         bytes32 ilk,
@@ -165,7 +176,7 @@ contract DssProxyActions is Common {
         uint256 rate = JugLike(jug).drip(ilk);
 
         // Gets DAI balance of the urn in the vat
-        uint256 dai = VatLike(vat).dai(urn);
+        uint256 dai = vat.dai(urn);
 
         // If there was already enough DAI in the vat balance, just exits it without adding more debt
         uint256 rad = _mul(wad, RAY);
@@ -179,15 +190,14 @@ contract DssProxyActions is Common {
     }
 
     function _getWipeDart(
-        address vat,
         uint256 dai,
         address urn,
         bytes32 ilk
     ) internal view returns (int256 dart) {
         // Gets actual rate from the vat
-        (, uint256 rate,,,) = VatLike(vat).ilks(ilk);
+        (, uint256 rate,,,) = vat.ilks(ilk);
         // Gets actual art value of the urn
-        (, uint256 art) = VatLike(vat).urns(ilk, urn);
+        (, uint256 art) = vat.urns(ilk, urn);
 
         // Uses the whole dai balance in the vat to reduce the debt
         dart = _toInt256(dai / rate);
@@ -196,17 +206,16 @@ contract DssProxyActions is Common {
     }
 
     function _getWipeAllWad(
-        address vat,
         address usr,
         address urn,
         bytes32 ilk
     ) internal view returns (uint256 wad) {
         // Gets actual rate from the vat
-        (, uint256 rate,,,) = VatLike(vat).ilks(ilk);
+        (, uint256 rate,,,) = vat.ilks(ilk);
         // Gets actual art value of the urn
-        (, uint256 art) = VatLike(vat).urns(ilk, urn);
+        (, uint256 art) = vat.urns(ilk, urn);
 
-        uint256 rad = _sub(_mul(art, rate), VatLike(vat).dai(usr));
+        uint256 rad = _sub(_mul(art, rate), vat.dai(usr));
         wad = rad / RAY;
 
         // If the rad precision has some dust, it will need to request for 1 extra wad wei
@@ -228,12 +237,6 @@ contract DssProxyActions is Common {
         // Joins WETH collateral into the vat
         GemJoinLike(ethJoin).join(urn, msg.value);
     }
-
-    // Deprecated
-    function gemJoin_join(address gemJoin, address urn, uint256 amt, bool) public {
-        gemJoin_join(gemJoin, urn, amt);
-    }
-    //
 
     function gemJoin_join(address gemJoin, address urn, uint256 amt) public {
         GemLike gem = GemJoinLike(gemJoin).gem();
@@ -260,24 +263,21 @@ contract DssProxyActions is Common {
     }
 
     function open(
-        address manager,
         bytes32 ilk,
         address usr
     ) public returns (uint256 cdp) {
-        cdp = ManagerLike(manager).open(ilk, usr);
+        cdp = manager.open(ilk, usr);
     }
 
     function give(
-        address manager,
         uint256 cdp,
         address usr
     ) public {
-        ManagerLike(manager).give(cdp, usr);
+        manager.give(cdp, usr);
     }
 
     function giveToProxy(
         address proxyRegistry,
-        address manager,
         uint256 cdp,
         address dst
     ) public {
@@ -295,88 +295,79 @@ contract DssProxyActions is Common {
             proxy = ProxyRegistryLike(proxyRegistry).build(dst);
         }
         // Transfers CDP to the dst proxy
-        give(manager, cdp, proxy);
+        give(cdp, proxy);
     }
 
     function cdpAllow(
-        address manager,
         uint256 cdp,
         address usr,
         uint256 ok
     ) public {
-        ManagerLike(manager).cdpAllow(cdp, usr, ok);
+        manager.cdpAllow(cdp, usr, ok);
     }
 
     function urnAllow(
-        address manager,
         address usr,
         uint256 ok
     ) public {
-        ManagerLike(manager).urnAllow(usr, ok);
+        manager.urnAllow(usr, ok);
     }
 
     function flux(
-        address manager,
         uint256 cdp,
         address dst,
         uint256 wad
     ) public {
-        ManagerLike(manager).flux(cdp, dst, wad);
+        manager.flux(cdp, dst, wad);
     }
 
     function move(
-        address manager,
         uint256 cdp,
         address dst,
         uint256 rad
     ) public {
-        ManagerLike(manager).move(cdp, dst, rad);
+        manager.move(cdp, dst, rad);
     }
 
     function frob(
-        address manager,
         uint256 cdp,
         int256 dink,
         int256 dart
     ) public {
-        ManagerLike(manager).frob(cdp, dink, dart);
+        manager.frob(cdp, dink, dart);
     }
 
     function quit(
-        address manager,
         uint256 cdp,
         address dst
     ) public {
-        ManagerLike(manager).quit(cdp, dst);
+        manager.quit(cdp, dst);
     }
 
     function enter(
-        address manager,
         address src,
         uint256 cdp
     ) public {
-        ManagerLike(manager).enter(src, cdp);
+        manager.enter(src, cdp);
     }
 
     function shift(
-        address manager,
         uint256 cdpSrc,
         uint256 cdpOrg
     ) public {
-        ManagerLike(manager).shift(cdpSrc, cdpOrg);
+        manager.shift(cdpSrc, cdpOrg);
     }
 
     function lockETH(
-        address manager,
         address ethJoin,
         uint256 cdp
     ) public payable {
         // Receives ETH amount, converts it to WETH and joins it into the vat
         ethJoin_join(ethJoin, address(this));
         // Locks WETH amount into the CDP
-        VatLike(ManagerLike(manager).vat()).frob(
-            ManagerLike(manager).ilks(cdp),
-            ManagerLike(manager).urns(cdp),
+        vat.frob(
+            manager.ilks(cdp),
+            manager.urns(cdp),
             address(this),
             address(this),
             _toInt256(msg.value),
@@ -385,29 +376,15 @@ contract DssProxyActions is Common {
     }
 
     function safeLockETH(
-        address manager,
         address ethJoin,
         uint256 cdp,
         address owner
     ) public payable {
-        require(ManagerLike(manager).owns(cdp) == owner, "owner-missmatch");
-        lockETH(manager, ethJoin, cdp);
+        require(manager.owns(cdp) == owner, "owner-missmatch");
+        lockETH(ethJoin, cdp);
     }
 
-    // Deprecated
     function lockGem(
-        address manager,
-        address gemJoin,
-        uint256 cdp,
-        uint256 amt,
-        bool
-    ) public {
-        lockGem(manager, gemJoin, cdp, amt);
-    }
-    //
-
-    function lockGem(
-        address manager,
         address gemJoin,
         uint256 cdp,
         uint256 amt
@@ -415,9 +392,9 @@ contract DssProxyActions is Common {
         // Takes token amount from user's wallet and joins into the vat
         gemJoin_join(gemJoin, address(this), amt);
         // Locks token amount into the CDP
-        VatLike(ManagerLike(manager).vat()).frob(
-            ManagerLike(manager).ilks(cdp),
-            ManagerLike(manager).urns(cdp),
+        vat.frob(
+            manager.ilks(cdp),
+            manager.urns(cdp),
             address(this),
             address(this),
             _toInt256(_convertTo18(gemJoin, amt)),
@@ -425,40 +402,25 @@ contract DssProxyActions is Common {
         );
     }
 
-    // Deprecated
     function safeLockGem(
-        address manager,
-        address gemJoin,
-        uint256 cdp,
-        uint256 amt,
-        bool,
-        address owner
-    ) public {
-        safeLockGem(manager, gemJoin, cdp, amt, owner);
-    }
-    //
-
-    function safeLockGem(
-        address manager,
         address gemJoin,
         uint256 cdp,
         uint256 amt,
         address owner
     ) public {
-        require(ManagerLike(manager).owns(cdp) == owner, "owner-missmatch");
-        lockGem(manager, gemJoin, cdp, amt);
+        require(manager.owns(cdp) == owner, "owner-missmatch");
+        lockGem(gemJoin, cdp, amt);
     }
 
     function freeETH(
-        address manager,
         address ethJoin,
         uint256 cdp,
         uint256 wad
     ) public {
         // Unlocks WETH amount from the CDP
-        frob(manager, cdp, -_toInt256(wad), 0);
+        frob(cdp, -_toInt256(wad), 0);
         // Moves the amount from the CDP urn to proxy's address
-        flux(manager, cdp, address(this), wad);
+        flux(cdp, address(this), wad);
         // Exits WETH amount to proxy address as a token
         GemJoinLike(ethJoin).exit(address(this), wad);
         // Converts WETH to ETH
@@ -468,28 +430,26 @@ contract DssProxyActions is Common {
     }
 
     function freeGem(
-        address manager,
         address gemJoin,
         uint256 cdp,
         uint256 amt
     ) public {
         uint256 wad = _convertTo18(gemJoin, amt);
         // Unlocks token amount from the CDP
-        frob(manager, cdp, -_toInt256(wad), 0);
+        frob(cdp, -_toInt256(wad), 0);
         // Moves the amount from the CDP urn to proxy's address
-        flux(manager, cdp, address(this), wad);
+        flux(cdp, address(this), wad);
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, amt);
     }
 
     function exitETH(
-        address manager,
         address ethJoin,
         uint256 cdp,
         uint256 wad
     ) public {
         // Moves the amount from the CDP urn to proxy's address
-        flux(manager, cdp, address(this), wad);
+        flux(cdp, address(this), wad);
 
         // Exits WETH amount to proxy address as a token
         GemJoinLike(ethJoin).exit(address(this), wad);
@@ -500,112 +460,102 @@ contract DssProxyActions is Common {
     }
 
     function exitGem(
-        address manager,
         address gemJoin,
         uint256 cdp,
         uint256 amt
     ) public {
         // Moves the amount from the CDP urn to proxy's address
-        flux(manager, cdp, address(this), _convertTo18(gemJoin, amt));
+        flux(cdp, address(this), _convertTo18(gemJoin, amt));
 
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, amt);
     }
 
     function draw(
-        address manager,
         address jug,
         address daiJoin,
         uint256 cdp,
         uint256 wad
     ) public {
-        address vat = ManagerLike(manager).vat();
         // Generates debt in the CDP
         frob(
-            manager,
             cdp,
             0,
             _getDrawDart(
-                vat,
                 jug,
-                ManagerLike(manager).urns(cdp),
-                ManagerLike(manager).ilks(cdp),
+                manager.urns(cdp),
+                manager.ilks(cdp),
                 wad
             )
         );
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
-        move(manager, cdp, address(this), _toRad(wad));
+        move(cdp, address(this), _toRad(wad));
         // Allows adapter to access to proxy's DAI balance in the vat
-        if (VatLike(vat).can(address(this), address(daiJoin)) == 0) {
-            VatLike(vat).hope(daiJoin);
+        if (vat.can(address(this), address(daiJoin)) == 0) {
+            vat.hope(daiJoin);
         }
         // Exits DAI to the user's wallet as a token
         DaiJoinLike(daiJoin).exit(msg.sender, wad);
     }
 
     function wipe(
-        address manager,
         address daiJoin,
         uint256 cdp,
         uint256 wad
     ) public {
-        address vat = ManagerLike(manager).vat();
-        address urn = ManagerLike(manager).urns(cdp);
-        bytes32 ilk = ManagerLike(manager).ilks(cdp);
+        address urn = manager.urns(cdp);
+        bytes32 ilk = manager.ilks(cdp);
 
-        address own = ManagerLike(manager).owns(cdp);
-        if (own == address(this) || ManagerLike(manager).cdpCan(own, cdp, address(this)) == 1) {
+        address own = manager.owns(cdp);
+        if (own == address(this) || manager.cdpCan(own, cdp, address(this)) == 1) {
             // Joins DAI amount into the vat
             daiJoin_join(daiJoin, urn, wad);
             // Paybacks debt to the CDP
-            frob(manager, cdp, 0, _getWipeDart(vat, VatLike(vat).dai(urn), urn, ilk));
+            frob(cdp, 0, _getWipeDart(vat.dai(urn), urn, ilk));
         } else {
              // Joins DAI amount into the vat
             daiJoin_join(daiJoin, address(this), wad);
             // Paybacks debt to the CDP
-            VatLike(vat).frob(
+            vat.frob(
                 ilk,
                 urn,
                 address(this),
                 address(this),
                 0,
-                _getWipeDart(vat, wad * RAY, urn, ilk)
+                _getWipeDart(wad * RAY, urn, ilk)
             );
         }
     }
 
     function safeWipe(
-        address manager,
         address daiJoin,
         uint256 cdp,
         uint256 wad,
         address owner
     ) public {
-        require(ManagerLike(manager).owns(cdp) == owner, "owner-missmatch");
-        wipe(manager, daiJoin, cdp, wad);
+        require(manager.owns(cdp) == owner, "owner-missmatch");
+        wipe(daiJoin, cdp, wad);
     }
 
     function wipeAll(
-        address manager,
         address daiJoin,
         uint256 cdp
     ) public {
-        address vat = ManagerLike(manager).vat();
-        address urn = ManagerLike(manager).urns(cdp);
-        bytes32 ilk = ManagerLike(manager).ilks(cdp);
-        (, uint256 art) = VatLike(vat).urns(ilk, urn);
+        address urn = manager.urns(cdp);
+        bytes32 ilk = manager.ilks(cdp);
+        (, uint256 art) = vat.urns(ilk, urn);
 
-        address own = ManagerLike(manager).owns(cdp);
-        if (own == address(this) || ManagerLike(manager).cdpCan(own, cdp, address(this)) == 1) {
+        address own = manager.owns(cdp);
+        if (own == address(this) || manager.cdpCan(own, cdp, address(this)) == 1) {
             // Joins DAI amount into the vat
-            daiJoin_join(daiJoin, urn, _getWipeAllWad(vat, urn, urn, ilk));
+            daiJoin_join(daiJoin, urn, _getWipeAllWad(urn, urn, ilk));
             // Paybacks debt to the CDP
-            frob(manager, cdp, 0, -_toInt256(art));
+            frob(cdp, 0, -_toInt256(art));
         } else {
             // Joins DAI amount into the vat
-            daiJoin_join(daiJoin, address(this), _getWipeAllWad(vat, address(this), urn, ilk));
+            daiJoin_join(daiJoin, address(this), _getWipeAllWad(address(this), urn, ilk));
             // Paybacks debt to the CDP
-            VatLike(vat).frob(
+            vat.frob(
                 ilk,
                 urn,
                 address(this),
@@ -617,80 +567,58 @@ contract DssProxyActions is Common {
     }
 
     function safeWipeAll(
-        address manager,
         address daiJoin,
         uint256 cdp,
         address owner
     ) public {
-        require(ManagerLike(manager).owns(cdp) == owner, "owner-missmatch");
-        wipeAll(manager, daiJoin, cdp);
+        require(manager.owns(cdp) == owner, "owner-missmatch");
+        wipeAll(daiJoin, cdp);
     }
 
     function lockETHAndDraw(
-        address manager,
         address jug,
         address ethJoin,
         address daiJoin,
         uint256 cdp,
         uint256 wadD
     ) public payable {
-        address urn = ManagerLike(manager).urns(cdp);
-        address vat = ManagerLike(manager).vat();
+        address urn = manager.urns(cdp);
 
         // Receives ETH amount, converts it to WETH and joins it into the vat
         ethJoin_join(ethJoin, urn);
         // Locks WETH amount into the CDP and generates debt
         frob(
-            manager,
             cdp,
             _toInt256(msg.value),
             _getDrawDart(
-                vat,
                 jug,
                 urn,
-                ManagerLike(manager).ilks(cdp),
+                manager.ilks(cdp),
                 wadD
             )
         );
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
-        move(manager, cdp, address(this), _toRad(wadD));
+        move(cdp, address(this), _toRad(wadD));
         // Allows adapter to access to proxy's DAI balance in the vat
-        if (VatLike(vat).can(address(this), address(daiJoin)) == 0) {
-            VatLike(vat).hope(daiJoin);
+        if (vat.can(address(this), address(daiJoin)) == 0) {
+            vat.hope(daiJoin);
         }
         // Exits DAI to the user's wallet as a token
         DaiJoinLike(daiJoin).exit(msg.sender, wadD);
     }
 
     function openLockETHAndDraw(
-        address manager,
         address jug,
         address ethJoin,
         address daiJoin,
         bytes32 ilk,
         uint256 wadD
     ) public payable returns (uint256 cdp) {
-        cdp = open(manager, ilk, address(this));
-        lockETHAndDraw(manager, jug, ethJoin, daiJoin, cdp, wadD);
+        cdp = open(ilk, address(this));
+        lockETHAndDraw(jug, ethJoin, daiJoin, cdp, wadD);
     }
 
-    // Deprecated
     function lockGemAndDraw(
-        address manager,
-        address jug,
-        address gemJoin,
-        address daiJoin,
-        uint256 cdp,
-        uint256 amtC,
-        uint256 wadD,
-        bool
-    ) public {
-        lockGemAndDraw(manager, jug, gemJoin, daiJoin, cdp, amtC, wadD);
-    }
-    //
-
-    function lockGemAndDraw(
-        address manager,
         address jug,
         address gemJoin,
         address daiJoin,
@@ -698,18 +626,15 @@ contract DssProxyActions is Common {
         uint256 amtC,
         uint256 wadD
     ) public {
-        address urn = ManagerLike(manager).urns(cdp);
-        address vat = ManagerLike(manager).vat();
-        bytes32 ilk = ManagerLike(manager).ilks(cdp);
+        address urn = manager.urns(cdp);
+        bytes32 ilk = manager.ilks(cdp);
         // Takes token amount from user's wallet and joins into the vat
         gemJoin_join(gemJoin, urn, amtC);
         // Locks token amount into the CDP and generates debt
         frob(
-            manager,
             cdp,
             _toInt256(_convertTo18(gemJoin, amtC)),
             _getDrawDart(
-                vat,
                 jug,
                 urn,
                 ilk,
@@ -717,32 +642,16 @@ contract DssProxyActions is Common {
             )
         );
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
-        move(manager, cdp, address(this), _toRad(wadD));
+        move(cdp, address(this), _toRad(wadD));
         // Allows adapter to access to proxy's DAI balance in the vat
-        if (VatLike(vat).can(address(this), address(daiJoin)) == 0) {
-            VatLike(vat).hope(daiJoin);
+        if (vat.can(address(this), address(daiJoin)) == 0) {
+            vat.hope(daiJoin);
         }
         // Exits DAI to the user's wallet as a token
         DaiJoinLike(daiJoin).exit(msg.sender, wadD);
     }
 
-    // Deprecated
     function openLockGemAndDraw(
-        address manager,
-        address jug,
-        address gemJoin,
-        address daiJoin,
-        bytes32 ilk,
-        uint256 amtC,
-        uint256 wadD,
-        bool
-    ) public returns (uint256 cdp) {
-        cdp = openLockGemAndDraw(manager, jug, gemJoin, daiJoin, ilk, amtC, wadD);
-    }
-    //
-
-    function openLockGemAndDraw(
-        address manager,
         address jug,
         address gemJoin,
         address daiJoin,
@@ -750,30 +659,28 @@ contract DssProxyActions is Common {
         uint256 amtC,
         uint256 wadD
     ) public returns (uint256 cdp) {
-        cdp = open(manager, ilk, address(this));
-        lockGemAndDraw(manager, jug, gemJoin, daiJoin, cdp, amtC, wadD);
+        cdp = open(ilk, address(this));
+        lockGemAndDraw(jug, gemJoin, daiJoin, cdp, amtC, wadD);
     }
 
     function wipeAndFreeETH(
-        address manager,
         address ethJoin,
         address daiJoin,
         uint256 cdp,
         uint256 wadC,
         uint256 wadD
     ) public {
-        address urn = ManagerLike(manager).urns(cdp);
+        address urn = manager.urns(cdp);
         // Joins DAI amount into the vat
         daiJoin_join(daiJoin, urn, wadD);
         // Paybacks debt to the CDP and unlocks WETH amount from it
         frob(
-            manager,
             cdp,
             -_toInt256(wadC),
-            _getWipeDart(ManagerLike(manager).vat(), VatLike(ManagerLike(manager).vat()).dai(urn), urn, ManagerLike(manager).ilks(cdp))
+            _getWipeDart(vat.dai(urn), urn, manager.ilks(cdp))
         );
         // Moves the amount from the CDP urn to proxy's address
-        flux(manager, cdp, address(this), wadC);
+        flux(cdp, address(this), wadC);
         // Exits WETH amount to proxy address as a token
         GemJoinLike(ethJoin).exit(address(this), wadC);
         // Converts WETH to ETH
@@ -783,28 +690,25 @@ contract DssProxyActions is Common {
     }
 
     function wipeAllAndFreeETH(
-        address manager,
         address ethJoin,
         address daiJoin,
         uint256 cdp,
         uint256 wadC
     ) public {
-        address vat = ManagerLike(manager).vat();
-        address urn = ManagerLike(manager).urns(cdp);
-        bytes32 ilk = ManagerLike(manager).ilks(cdp);
-        (, uint256 art) = VatLike(vat).urns(ilk, urn);
+        address urn = manager.urns(cdp);
+        bytes32 ilk = manager.ilks(cdp);
+        (, uint256 art) = vat.urns(ilk, urn);
 
         // Joins DAI amount into the vat
-        daiJoin_join(daiJoin, urn, _getWipeAllWad(vat, urn, urn, ilk));
+        daiJoin_join(daiJoin, urn, _getWipeAllWad(urn, urn, ilk));
         // Paybacks debt to the CDP and unlocks WETH amount from it
         frob(
-            manager,
             cdp,
             -_toInt256(wadC),
             -_toInt256(art)
         );
         // Moves the amount from the CDP urn to proxy's address
-        flux(manager, cdp, address(this), wadC);
+        flux(cdp, address(this), wadC);
         // Exits WETH amount to proxy address as a token
         GemJoinLike(ethJoin).exit(address(this), wadC);
         // Converts WETH to ETH
@@ -814,70 +718,69 @@ contract DssProxyActions is Common {
     }
 
     function wipeAndFreeGem(
-        address manager,
         address gemJoin,
         address daiJoin,
         uint256 cdp,
         uint256 amtC,
         uint256 wadD
     ) public {
-        address urn = ManagerLike(manager).urns(cdp);
+        address urn = manager.urns(cdp);
         // Joins DAI amount into the vat
         daiJoin_join(daiJoin, urn, wadD);
         uint256 wadC = _convertTo18(gemJoin, amtC);
         // Paybacks debt to the CDP and unlocks token amount from it
         frob(
-            manager,
             cdp,
             -_toInt256(wadC),
-            _getWipeDart(ManagerLike(manager).vat(), VatLike(ManagerLike(manager).vat()).dai(urn), urn, ManagerLike(manager).ilks(cdp))
+            _getWipeDart(vat.dai(urn), urn, manager.ilks(cdp))
         );
         // Moves the amount from the CDP urn to proxy's address
-        flux(manager, cdp, address(this), wadC);
+        flux(cdp, address(this), wadC);
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, amtC);
     }
 
     function wipeAllAndFreeGem(
-        address manager,
         address gemJoin,
         address daiJoin,
         uint256 cdp,
         uint256 amtC
     ) public {
-        address vat = ManagerLike(manager).vat();
-        address urn = ManagerLike(manager).urns(cdp);
-        bytes32 ilk = ManagerLike(manager).ilks(cdp);
-        (, uint256 art) = VatLike(vat).urns(ilk, urn);
+        address urn = manager.urns(cdp);
+        bytes32 ilk = manager.ilks(cdp);
+        (, uint256 art) = vat.urns(ilk, urn);
 
         // Joins DAI amount into the vat
-        daiJoin_join(daiJoin, urn, _getWipeAllWad(vat, urn, urn, ilk));
+        daiJoin_join(daiJoin, urn, _getWipeAllWad(urn, urn, ilk));
         uint256 wadC = _convertTo18(gemJoin, amtC);
         // Paybacks debt to the CDP and unlocks token amount from it
         frob(
-            manager,
             cdp,
             -_toInt256(wadC),
             -_toInt256(art)
         );
         // Moves the amount from the CDP urn to proxy's address
-        flux(manager, cdp, address(this), wadC);
+        flux(cdp, address(this), wadC);
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, amtC);
     }
 }
 
 contract DssProxyActionsEnd is Common {
+    ManagerLike immutable public manager;
+
+    constructor(address vat_, address manager_) public Common(vat_) {
+        manager = ManagerLike(manager_);
+    }
+
     // Internal functions
 
     function _free(
-        address manager,
         address end,
         uint256 cdp
     ) internal returns (uint256 ink) {
-        bytes32 ilk = ManagerLike(manager).ilks(cdp);
-        address urn = ManagerLike(manager).urns(cdp);
-        VatLike vat = VatLike(ManagerLike(manager).vat());
+        bytes32 ilk = manager.ilks(cdp);
+        address urn = manager.urns(cdp);
         uint256 art;
         (ink, art) = vat.urns(ilk, urn);
 
@@ -888,22 +791,22 @@ contract DssProxyActionsEnd is Common {
         }
         // Approves the manager to transfer the position to proxy's address in the vat
         if (vat.can(address(this), address(manager)) == 0) {
-            vat.hope(manager);
+            vat.hope(address(manager));
         }
         // Transfers position from CDP to the proxy address
-        ManagerLike(manager).quit(cdp, address(this));
+        manager.quit(cdp, address(this));
         // Frees the position and recovers the collateral in the vat registry
         EndLike(end).free(ilk);
     }
 
     // Public functions
+
     function freeETH(
-        address manager,
         address ethJoin,
         address end,
         uint256 cdp
     ) public {
-        uint256 wad = _free(manager, end, cdp);
+        uint256 wad = _free(end, cdp);
         // Exits WETH amount to proxy address as a token
         GemJoinLike(ethJoin).exit(address(this), wad);
         // Converts WETH to ETH
@@ -913,12 +816,11 @@ contract DssProxyActionsEnd is Common {
     }
 
     function freeGem(
-        address manager,
         address gemJoin,
         address end,
         uint256 cdp
     ) public {
-        uint256 amt = _free(manager, end, cdp) / 10 ** (18 - GemJoinLike(gemJoin).dec());
+        uint256 amt = _free(end, cdp) / 10 ** (18 - GemJoinLike(gemJoin).dec());
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, amt);
     }
@@ -929,7 +831,6 @@ contract DssProxyActionsEnd is Common {
         uint256 wad
     ) public {
         daiJoin_join(daiJoin, address(this), wad);
-        VatLike vat = DaiJoinLike(daiJoin).vat();
         // Approves the end to take out DAI from the proxy's balance in the vat
         if (vat.can(address(this), address(end)) == 0) {
             vat.hope(end);
@@ -967,12 +868,13 @@ contract DssProxyActionsEnd is Common {
 }
 
 contract DssProxyActionsDsr is Common {
+    constructor(address vat_) public Common(vat_) {}
+
     function join(
         address daiJoin,
         address pot,
         uint256 wad
     ) public {
-        VatLike vat = DaiJoinLike(daiJoin).vat();
         // Executes drip to get the chi rate updated to rho == now, otherwise join will fail
         uint256 chi = PotLike(pot).drip();
         // Joins wad amount to the vat balance
@@ -990,7 +892,6 @@ contract DssProxyActionsDsr is Common {
         address pot,
         uint256 wad
     ) public {
-        VatLike vat = DaiJoinLike(daiJoin).vat();
         // Executes drip to count the savings accumulated until this moment
         uint256 chi = PotLike(pot).drip();
         // Calculates the pie value in the pot equivalent to the DAI wad amount
@@ -1015,7 +916,6 @@ contract DssProxyActionsDsr is Common {
         address daiJoin,
         address pot
     ) public {
-        VatLike vat = DaiJoinLike(daiJoin).vat();
         // Executes drip to count the savings accumulated until this moment
         uint256 chi = PotLike(pot).drip();
         // Gets the total pie belonging to the proxy address
