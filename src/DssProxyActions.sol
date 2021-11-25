@@ -184,7 +184,7 @@ contract DssProxyActions is Common {
             uint256 toDraw = rad - dai; // dai < rad
             // Calculates the needed dart so together with the existing dai in the vat is enough to exit wad amount of DAI tokens
             dart = _toInt256(toDraw / rate);
-            // This is neeeded due lack of precision. It might need to sum an extra dart wei (for the given DAI wad amount)
+            // This is needed due lack of precision. It might need to sum an extra dart wei (for the given DAI wad amount)
             dart = _mul(uint256(dart), rate) < toDraw ? dart + 1 : dart;
         }
     }
