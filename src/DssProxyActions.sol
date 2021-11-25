@@ -425,9 +425,9 @@ contract DssProxyActions is Common {
         uint256 wad
     ) public {
         // Unlocks WETH amount from the CDP
-        frob(cdp, -_toInt256(wad), 0);
+        manager.frob(cdp, -_toInt256(wad), 0);
         // Moves the amount from the CDP urn to proxy's address
-        flux(cdp, address(this), wad);
+        manager.flux(cdp, address(this), wad);
         // Exits WETH amount to proxy address as a token
         GemJoinLike(ethJoin).exit(address(this), wad);
         // Converts WETH to ETH
@@ -443,9 +443,9 @@ contract DssProxyActions is Common {
     ) public {
         uint256 wad = _convertTo18(gemJoin, amt);
         // Unlocks token amount from the CDP
-        frob(cdp, -_toInt256(wad), 0);
+        manager.frob(cdp, -_toInt256(wad), 0);
         // Moves the amount from the CDP urn to proxy's address
-        flux(cdp, address(this), wad);
+        manager.flux(cdp, address(this), wad);
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, amt);
     }
@@ -456,7 +456,7 @@ contract DssProxyActions is Common {
         uint256 wad
     ) public {
         // Moves the amount from the CDP urn to proxy's address
-        flux(cdp, address(this), wad);
+        manager.flux(cdp, address(this), wad);
 
         // Exits WETH amount to proxy address as a token
         GemJoinLike(ethJoin).exit(address(this), wad);
@@ -472,7 +472,7 @@ contract DssProxyActions is Common {
         uint256 amt
     ) public {
         // Moves the amount from the CDP urn to proxy's address
-        flux(cdp, address(this), _convertTo18(gemJoin, amt));
+        manager.flux(cdp, address(this), _convertTo18(gemJoin, amt));
 
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, amt);
@@ -485,7 +485,7 @@ contract DssProxyActions is Common {
         uint256 wad
     ) public {
         // Generates debt in the CDP
-        frob(
+        manager.frob(
             cdp,
             0,
             _getDrawDart(
@@ -496,7 +496,7 @@ contract DssProxyActions is Common {
             )
         );
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
-        move(cdp, address(this), _toRad(wad));
+        manager.move(cdp, address(this), _toRad(wad));
         // Allows adapter to access to proxy's DAI balance in the vat
         if (vat.can(address(this), address(daiJoin)) == 0) {
             vat.hope(daiJoin);
@@ -518,7 +518,7 @@ contract DssProxyActions is Common {
             // Joins DAI amount into the vat
             daiJoin_join(daiJoin, urn, wad);
             // Paybacks debt to the CDP
-            frob(cdp, 0, _getWipeDart(vat.dai(urn), urn, ilk));
+            manager.frob(cdp, 0, _getWipeDart(vat.dai(urn), urn, ilk));
         } else {
              // Joins DAI amount into the vat
             daiJoin_join(daiJoin, address(this), wad);
@@ -557,7 +557,7 @@ contract DssProxyActions is Common {
             // Joins DAI amount into the vat
             daiJoin_join(daiJoin, urn, _getWipeAllWad(urn, urn, ilk));
             // Paybacks debt to the CDP
-            frob(cdp, 0, -_toInt256(art));
+            manager.frob(cdp, 0, -_toInt256(art));
         } else {
             // Joins DAI amount into the vat
             daiJoin_join(daiJoin, address(this), _getWipeAllWad(address(this), urn, ilk));
@@ -594,7 +594,7 @@ contract DssProxyActions is Common {
         // Receives ETH amount, converts it to WETH and joins it into the vat
         ethJoin_join(ethJoin, urn);
         // Locks WETH amount into the CDP and generates debt
-        frob(
+        manager.frob(
             cdp,
             _toInt256(msg.value),
             _getDrawDart(
@@ -605,7 +605,7 @@ contract DssProxyActions is Common {
             )
         );
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
-        move(cdp, address(this), _toRad(wadD));
+        manager.move(cdp, address(this), _toRad(wadD));
         // Allows adapter to access to proxy's DAI balance in the vat
         if (vat.can(address(this), address(daiJoin)) == 0) {
             vat.hope(daiJoin);
@@ -621,7 +621,7 @@ contract DssProxyActions is Common {
         bytes32 ilk,
         uint256 wadD
     ) public payable returns (uint256 cdp) {
-        cdp = open(ilk, address(this));
+        cdp = manager.open(ilk, address(this));
         lockETHAndDraw(jug, ethJoin, daiJoin, cdp, wadD);
     }
 
@@ -638,7 +638,7 @@ contract DssProxyActions is Common {
         // Takes token amount from user's wallet and joins into the vat
         gemJoin_join(gemJoin, urn, amtC);
         // Locks token amount into the CDP and generates debt
-        frob(
+        manager.frob(
             cdp,
             _toInt256(_convertTo18(gemJoin, amtC)),
             _getDrawDart(
@@ -649,7 +649,7 @@ contract DssProxyActions is Common {
             )
         );
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
-        move(cdp, address(this), _toRad(wadD));
+        manager.move(cdp, address(this), _toRad(wadD));
         // Allows adapter to access to proxy's DAI balance in the vat
         if (vat.can(address(this), address(daiJoin)) == 0) {
             vat.hope(daiJoin);
@@ -666,7 +666,7 @@ contract DssProxyActions is Common {
         uint256 amtC,
         uint256 wadD
     ) public returns (uint256 cdp) {
-        cdp = open(ilk, address(this));
+        cdp = manager.open(ilk, address(this));
         lockGemAndDraw(jug, gemJoin, daiJoin, cdp, amtC, wadD);
     }
 
@@ -681,13 +681,13 @@ contract DssProxyActions is Common {
         // Joins DAI amount into the vat
         daiJoin_join(daiJoin, urn, wadD);
         // Paybacks debt to the CDP and unlocks WETH amount from it
-        frob(
+        manager.frob(
             cdp,
             -_toInt256(wadC),
             _getWipeDart(vat.dai(urn), urn, manager.ilks(cdp))
         );
         // Moves the amount from the CDP urn to proxy's address
-        flux(cdp, address(this), wadC);
+        manager.flux(cdp, address(this), wadC);
         // Exits WETH amount to proxy address as a token
         GemJoinLike(ethJoin).exit(address(this), wadC);
         // Converts WETH to ETH
@@ -709,13 +709,13 @@ contract DssProxyActions is Common {
         // Joins DAI amount into the vat
         daiJoin_join(daiJoin, urn, _getWipeAllWad(urn, urn, ilk));
         // Paybacks debt to the CDP and unlocks WETH amount from it
-        frob(
+        manager.frob(
             cdp,
             -_toInt256(wadC),
             -_toInt256(art)
         );
         // Moves the amount from the CDP urn to proxy's address
-        flux(cdp, address(this), wadC);
+        manager.flux(cdp, address(this), wadC);
         // Exits WETH amount to proxy address as a token
         GemJoinLike(ethJoin).exit(address(this), wadC);
         // Converts WETH to ETH
@@ -736,13 +736,13 @@ contract DssProxyActions is Common {
         daiJoin_join(daiJoin, urn, wadD);
         uint256 wadC = _convertTo18(gemJoin, amtC);
         // Paybacks debt to the CDP and unlocks token amount from it
-        frob(
+        manager.frob(
             cdp,
             -_toInt256(wadC),
             _getWipeDart(vat.dai(urn), urn, manager.ilks(cdp))
         );
         // Moves the amount from the CDP urn to proxy's address
-        flux(cdp, address(this), wadC);
+        manager.flux(cdp, address(this), wadC);
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, amtC);
     }
@@ -761,13 +761,13 @@ contract DssProxyActions is Common {
         daiJoin_join(daiJoin, urn, _getWipeAllWad(urn, urn, ilk));
         uint256 wadC = _convertTo18(gemJoin, amtC);
         // Paybacks debt to the CDP and unlocks token amount from it
-        frob(
+        manager.frob(
             cdp,
             -_toInt256(wadC),
             -_toInt256(art)
         );
         // Moves the amount from the CDP urn to proxy's address
-        flux(cdp, address(this), wadC);
+        manager.flux(cdp, address(this), wadC);
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, amtC);
     }
