@@ -148,6 +148,10 @@ contract DssProxyActions is Common {
         require((z = x - y) <= x, "sub-overflow");
     }
 
+    function _divup(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = x != 0 ? ((x - 1) / y) + 1 : 0;
+    }
+
     function _toInt256(uint256 x) internal pure returns (int256 y) {
         y = int256(x);
         require(y >= 0, "int-overflow");
@@ -181,11 +185,7 @@ contract DssProxyActions is Common {
         // If there was already enough DAI in the vat balance, just exits it without adding more debt
         uint256 rad = _mul(wad, RAY);
         if (dai < rad) {
-            uint256 toDraw = rad - dai; // dai < rad
-            // Calculates the needed dart so together with the existing dai in the vat is enough to exit wad amount of DAI tokens
-            dart = _toInt256(toDraw / rate);
-            // This is needed due lack of precision. It might need to sum an extra dart wei (for the given DAI wad amount)
-            dart = _mul(uint256(dart), rate) < toDraw ? dart + 1 : dart;
+            dart = _toInt256(_divup(rad - dai, rate)); // safe since dai < rad
         }
     }
 
@@ -221,11 +221,7 @@ contract DssProxyActions is Common {
         // If there was already enough DAI in the vat balance, no need to join more
         uint256 debt = _mul(art, rate);
         if (debt > dai) {
-            uint256 rad = debt - dai;
-            wad = rad / RAY;
-
-            // If the rad precision has some dust, it will need to request for 1 extra wad wei
-            wad = _mul(wad, RAY) < rad ? wad + 1 : wad;
+            wad = _divup(debt - dai, RAY); // safe since debt > dai
         }
     }
 
