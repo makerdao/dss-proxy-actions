@@ -120,13 +120,9 @@ contract Common {
         dai = GemLike(DaiJoinLike(daiJoin_).dai());
     }
 
-    // Internal functions
-
     function _mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
         require(y == 0 || (z = x * y) / y == x, "mul-overflow");
     }
-
-    // Public functions
 
     function daiJoin_join(address urn, uint256 wad) public {
         // Gets DAI from the user's wallet
@@ -140,16 +136,14 @@ contract Common {
 
 contract DssProxyActions is Common {
     JugLike             immutable public jug;
-    ProxyRegistryLike   immutable public proxyRegistry;
+    ProxyRegistryLike   immutable public registry;
     ManagerLike         immutable public manager;
 
-    constructor(address daiJoin_, address jug_, address proxyRegistry_, address manager_) public Common(daiJoin_) {
+    constructor(address daiJoin_, address jug_, address registry_, address manager_) public Common(daiJoin_) {
         jug = JugLike(jug_);
-        proxyRegistry = ProxyRegistryLike(proxyRegistry_);
+        registry = ProxyRegistryLike(registry_);
         manager = ManagerLike(manager_);
     }
-
-    // Internal functions
 
     function _sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
         require((z = x - y) <= x, "sub-overflow");
@@ -184,10 +178,8 @@ contract DssProxyActions is Common {
     ) internal returns (int256 dart) {
         // Updates stability fee rate
         uint256 rate = jug.drip(ilk);
-
         // Gets DAI balance of the urn in the vat
         uint256 dai = vat.dai(urn);
-
         // If there was already enough DAI in the vat balance, just exits it without adding more debt
         uint256 rad = _mul(wad, RAY);
         if (dai < rad) {
@@ -204,7 +196,6 @@ contract DssProxyActions is Common {
         (, uint256 rate,,,) = vat.ilks(ilk);
         // Gets actual art value of the urn
         (, uint256 art) = vat.urns(ilk, urn);
-
         // Uses the whole dai balance in the vat to reduce the debt
         dart = _toInt256(dai / rate);
         // Checks the calculated dart is not higher than urn.art (total debt), otherwise uses its value
@@ -220,18 +211,14 @@ contract DssProxyActions is Common {
         (, uint256 rate,,,) = vat.ilks(ilk);
         // Gets actual art value of the urn
         (, uint256 art) = vat.urns(ilk, urn);
-
         // Gets DAI balance of the urn in the vat
         uint256 dai = vat.dai(usr);
-
         // If there was already enough DAI in the vat balance, no need to join more
         uint256 debt = _mul(art, rate);
         if (debt > dai) {
             wad = _divup(debt - dai, RAY); // safe since debt > dai
         }
     }
-
-    // Public functions
 
     function transfer(address gem, address dst, uint256 amt) public {
         GemLike(gem).transfer(dst, amt);
@@ -258,17 +245,17 @@ contract DssProxyActions is Common {
     }
 
     function hope(
-        address obj,
+        address addr,
         address usr
     ) public {
-        HopeLike(obj).hope(usr);
+        HopeLike(addr).hope(usr);
     }
 
     function nope(
-        address obj,
+        address addr,
         address usr
     ) public {
-        HopeLike(obj).nope(usr);
+        HopeLike(addr).nope(usr);
     }
 
     function open(
@@ -290,7 +277,7 @@ contract DssProxyActions is Common {
         address dst
     ) public {
         // Gets actual proxy address
-        address proxy = proxyRegistry.proxies(dst);
+        address proxy = registry.proxies(dst);
         // Checks if the proxy address already existed and dst address is still the owner
         if (proxy == address(0) || ProxyLike(proxy).owner() != dst) {
             uint256 csize;
@@ -300,7 +287,7 @@ contract DssProxyActions is Common {
             // We want to avoid creating a proxy for a contract address that might not be able to handle proxies, then losing the CDP
             require(csize == 0, "Dst-is-a-contract");
             // Creates the proxy for the dst address
-            proxy = proxyRegistry.build(dst);
+            proxy = registry.build(dst);
         }
         // Transfers CDP to the dst proxy
         give(cdp, proxy);
@@ -458,7 +445,6 @@ contract DssProxyActions is Common {
     ) public {
         // Moves the amount from the CDP urn to proxy's address
         manager.flux(cdp, address(this), wad);
-
         // Exits WETH amount to proxy address as a token
         GemJoinLike(ethJoin).exit(address(this), wad);
         // Converts WETH to ETH
@@ -474,7 +460,6 @@ contract DssProxyActions is Common {
     ) public {
         // Moves the amount from the CDP urn to proxy's address
         manager.flux(cdp, address(this), _convertTo18(gemJoin, amt));
-
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(msg.sender, amt);
     }
@@ -509,7 +494,6 @@ contract DssProxyActions is Common {
     ) public {
         address urn = manager.urns(cdp);
         bytes32 ilk = manager.ilks(cdp);
-
         address own = manager.owns(cdp);
         if (own == address(this) || manager.cdpCan(own, cdp, address(this)) == 1) {
             // Joins DAI amount into the vat
@@ -545,9 +529,8 @@ contract DssProxyActions is Common {
     ) public {
         address urn = manager.urns(cdp);
         bytes32 ilk = manager.ilks(cdp);
-        (, uint256 art) = vat.urns(ilk, urn);
-
         address own = manager.owns(cdp);
+        (, uint256 art) = vat.urns(ilk, urn);
         if (own == address(this) || manager.cdpCan(own, cdp, address(this)) == 1) {
             // Joins DAI amount into the vat
             daiJoin_join(urn, _getWipeAllWad(urn, urn, ilk));
@@ -582,7 +565,6 @@ contract DssProxyActions is Common {
         uint256 wadD
     ) public payable {
         address urn = manager.urns(cdp);
-
         // Receives ETH amount, converts it to WETH and joins it into the vat
         ethJoin_join(ethJoin, urn);
         // Locks WETH amount into the CDP and generates debt
@@ -687,7 +669,6 @@ contract DssProxyActions is Common {
         address urn = manager.urns(cdp);
         bytes32 ilk = manager.ilks(cdp);
         (, uint256 art) = vat.urns(ilk, urn);
-
         // Joins DAI amount into the vat
         daiJoin_join(urn, _getWipeAllWad(urn, urn, ilk));
         // Paybacks debt to the CDP and unlocks WETH amount from it
@@ -736,7 +717,6 @@ contract DssProxyActions is Common {
         address urn = manager.urns(cdp);
         bytes32 ilk = manager.ilks(cdp);
         (, uint256 art) = vat.urns(ilk, urn);
-
         // Joins DAI amount into the vat
         daiJoin_join(urn, _getWipeAllWad(urn, urn, ilk));
         uint256 wadC = _convertTo18(gemJoin, amtC);
@@ -760,8 +740,6 @@ contract DssProxyActionsEnd is Common {
         manager = ManagerLike(manager_);
     }
 
-    // Internal functions
-
     function _free(
         address end,
         uint256 cdp
@@ -770,7 +748,6 @@ contract DssProxyActionsEnd is Common {
         address urn = manager.urns(cdp);
         uint256 art;
         (ink, art) = vat.urns(ilk, urn);
-
         // If CDP still has debt, it needs to be paid
         if (art > 0) {
             EndLike(end).skim(ilk, urn);
@@ -785,8 +762,6 @@ contract DssProxyActionsEnd is Common {
         // Frees the position and recovers the collateral in the vat registry
         EndLike(end).free(ilk);
     }
-
-    // Public functions
 
     function freeETH(
         address ethJoin,
