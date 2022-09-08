@@ -121,7 +121,7 @@ contract Common {
     }
 
     function _mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require(y == 0 || (z = x * y) / y == x, "mul-overflow");
+        require(y == 0 || (z = x * y) / y == x, "DssProxyActions/mul-overflow");
     }
 
     function daiJoin_join(address urn, uint256 wad) public {
@@ -146,7 +146,7 @@ contract DssProxyActions is Common {
     }
 
     function _sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x - y) <= x, "sub-overflow");
+        require((z = x - y) <= x, "DssProxyActions/sub-overflow");
     }
 
     function _divup(uint256 x, uint256 y) internal pure returns (uint256 z) {
@@ -155,7 +155,7 @@ contract DssProxyActions is Common {
 
     function _toInt256(uint256 x) internal pure returns (int256 y) {
         y = int256(x);
-        require(y >= 0, "int-overflow");
+        require(y >= 0, "DssProxyActions/int-overflow");
     }
 
     function _toRad(uint256 wad) internal pure returns (uint256 rad) {
@@ -229,7 +229,7 @@ contract DssProxyActions is Common {
         // Wraps ETH in WETH
         gem.deposit{value: msg.value}();
         // Approves adapter to take the WETH amount
-        gem.approve(address(ethJoin), msg.value);
+        gem.approve(ethJoin, msg.value);
         // Joins WETH collateral into the vat
         GemJoinLike(ethJoin).join(urn, msg.value);
     }
@@ -285,7 +285,7 @@ contract DssProxyActions is Common {
                 csize := extcodesize(dst)
             }
             // We want to avoid creating a proxy for a contract address that might not be able to handle proxies, then losing the CDP
-            require(csize == 0, "Dst-is-a-contract");
+            require(csize == 0, "DssProxyActions/dst-is-a-contract");
             // Creates the proxy for the dst address
             proxy = registry.build(dst);
         }
@@ -375,7 +375,7 @@ contract DssProxyActions is Common {
         uint256 cdp,
         address owner
     ) public payable {
-        require(manager.owns(cdp) == owner, "owner-missmatch");
+        require(manager.owns(cdp) == owner, "DssProxyActions/owner-missmatch");
         lockETH(ethJoin, cdp);
     }
 
@@ -403,7 +403,7 @@ contract DssProxyActions is Common {
         uint256 amt,
         address owner
     ) public {
-        require(manager.owns(cdp) == owner, "owner-missmatch");
+        require(manager.owns(cdp) == owner, "DssProxyActions/owner-missmatch");
         lockGem(gemJoin, cdp, amt);
     }
 
@@ -520,7 +520,7 @@ contract DssProxyActions is Common {
         uint256 wad,
         address owner
     ) public {
-        require(manager.owns(cdp) == owner, "owner-missmatch");
+        require(manager.owns(cdp) == owner, "DssProxyActions/owner-missmatch");
         wipe(cdp, wad);
     }
 
@@ -555,7 +555,7 @@ contract DssProxyActions is Common {
         uint256 cdp,
         address owner
     ) public {
-        require(manager.owns(cdp) == owner, "owner-missmatch");
+        require(manager.owns(cdp) == owner, "DssProxyActions/owner-missmatch");
         wipeAll(cdp);
     }
 
