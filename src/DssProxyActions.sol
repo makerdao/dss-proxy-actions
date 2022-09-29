@@ -116,8 +116,8 @@ contract Common {
 
     constructor(address daiJoin_) public {
         vat = VatLike(DaiJoinLike(daiJoin_).vat());
-        daiJoin = DaiJoinLike(daiJoin_);
         dai = GemLike(DaiJoinLike(daiJoin_).dai());
+        daiJoin = DaiJoinLike(daiJoin_);
     }
 
     function _mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
