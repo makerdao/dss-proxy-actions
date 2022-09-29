@@ -859,10 +859,8 @@ contract DssProxyActionsDsr is Common {
     ) public {
         // Executes drip to count the savings accumulated until this moment
         uint256 chi = pot.drip();
-        // Calculates the pie value in the pot equivalent to the DAI wad amount
-        uint256 pie = _mul(wad, RAY) / chi;
-        // Exits DAI from the pot
-        pot.exit(pie);
+        // Exits wad DAI from the pot (calculating the input value)
+        pot.exit(_mul(wad, RAY) / chi);
         // Checks the actual balance of DAI in the vat after the pot exit
         uint256 bal = vat.dai(address(this));
         // Allows adapter to access to proxy's DAI balance in the vat
