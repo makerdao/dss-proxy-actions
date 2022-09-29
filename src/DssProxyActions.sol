@@ -842,8 +842,6 @@ contract DssProxyActionsDsr is Common {
     function join(
         uint256 wad
     ) public {
-        // Executes drip to get the chi rate updated to rho == now, otherwise join will fail
-        uint256 chi = pot.drip();
         // Joins wad amount to the vat balance
         daiJoin_join(address(this), wad);
         // Approves the pot to take out DAI from the proxy's balance in the vat
@@ -851,16 +849,14 @@ contract DssProxyActionsDsr is Common {
             vat.hope(address(pot));
         }
         // Joins the pie value (equivalent to the DAI wad amount) in the pot
-        pot.join(_mul(wad, RAY) / chi);
+        pot.join(_mul(wad, RAY) / pot.drip());
     }
 
     function exit(
         uint256 wad
     ) public {
-        // Executes drip to count the savings accumulated until this moment
-        uint256 chi = pot.drip();
         // Exits wad DAI from the pot (calculating the input value)
-        pot.exit(_mul(wad, RAY) / chi);
+        pot.exit(_mul(wad, RAY) / pot.drip());
         // Checks the actual balance of DAI in the vat after the pot exit
         uint256 bal = vat.dai(address(this));
         // Allows adapter to access to proxy's DAI balance in the vat
