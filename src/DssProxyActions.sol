@@ -213,14 +213,15 @@ contract DssProxyActions is Common {
         (, uint256 art) = vat.urns(ilk, urn);
         // Gets DAI balance of the urn in the vat
         uint256 dai = vat.dai(usr);
-        // If there was already enough DAI in the vat balance, no need to join more
         uint256 debt = _mul(art, rate);
+        // If there was already enough DAI in the vat balance, no need to join more
         if (debt > dai) {
+            // Return the amount of DAI needed to join to cover remaining debt
             wad = _divup(debt - dai, RAY); // safe since debt > dai
         }
     }
 
-    function transfer(address gem, address dst, uint256 amt) public {
+    function transfer(address gem, address dst, uint256 amt) external {
         GemLike(gem).transfer(dst, amt);
     }
 
@@ -247,35 +248,35 @@ contract DssProxyActions is Common {
     function hope(
         address addr,
         address usr
-    ) public {
+    ) external {
         HopeLike(addr).hope(usr);
     }
 
     function nope(
         address addr,
         address usr
-    ) public {
+    ) external {
         HopeLike(addr).nope(usr);
     }
 
     function open(
         bytes32 ilk,
         address usr
-    ) public returns (uint256 cdp) {
+    ) external returns (uint256 cdp) {
         cdp = manager.open(ilk, usr);
     }
 
     function give(
         uint256 cdp,
         address usr
-    ) public {
+    ) external {
         manager.give(cdp, usr);
     }
 
     function giveToProxy(
         uint256 cdp,
         address dst
-    ) public {
+    ) external {
         // Gets actual proxy address
         address proxy = registry.proxies(dst);
         // Checks if the proxy address already existed and dst address is still the owner
@@ -290,21 +291,21 @@ contract DssProxyActions is Common {
             proxy = registry.build(dst);
         }
         // Transfers CDP to the dst proxy
-        give(cdp, proxy);
+        manager.give(cdp, proxy);
     }
 
     function cdpAllow(
         uint256 cdp,
         address usr,
         uint256 ok
-    ) public {
+    ) external {
         manager.cdpAllow(cdp, usr, ok);
     }
 
     function urnAllow(
         address usr,
         uint256 ok
-    ) public {
+    ) external {
         manager.urnAllow(usr, ok);
     }
 
@@ -312,7 +313,7 @@ contract DssProxyActions is Common {
         uint256 cdp,
         address dst,
         uint256 wad
-    ) public {
+    ) external {
         manager.flux(cdp, dst, wad);
     }
 
@@ -320,7 +321,7 @@ contract DssProxyActions is Common {
         uint256 cdp,
         address dst,
         uint256 rad
-    ) public {
+    ) external {
         manager.move(cdp, dst, rad);
     }
 
@@ -328,28 +329,28 @@ contract DssProxyActions is Common {
         uint256 cdp,
         int256 dink,
         int256 dart
-    ) public {
+    ) external {
         manager.frob(cdp, dink, dart);
     }
 
     function quit(
         uint256 cdp,
         address dst
-    ) public {
+    ) external {
         manager.quit(cdp, dst);
     }
 
     function enter(
         address src,
         uint256 cdp
-    ) public {
+    ) external {
         manager.enter(src, cdp);
     }
 
     function shift(
         uint256 cdpSrc,
         uint256 cdpOrg
-    ) public {
+    ) external {
         manager.shift(cdpSrc, cdpOrg);
     }
 
@@ -374,7 +375,7 @@ contract DssProxyActions is Common {
         address ethJoin,
         uint256 cdp,
         address owner
-    ) public payable {
+    ) external payable {
         require(manager.owns(cdp) == owner, "DssProxyActions/owner-missmatch");
         lockETH(ethJoin, cdp);
     }
@@ -402,7 +403,7 @@ contract DssProxyActions is Common {
         uint256 cdp,
         uint256 amt,
         address owner
-    ) public {
+    ) external {
         require(manager.owns(cdp) == owner, "DssProxyActions/owner-missmatch");
         lockGem(gemJoin, cdp, amt);
     }
@@ -411,7 +412,7 @@ contract DssProxyActions is Common {
         address ethJoin,
         uint256 cdp,
         uint256 wad
-    ) public {
+    ) external {
         // Unlocks WETH amount from the CDP
         manager.frob(cdp, -_toInt256(wad), 0);
         // Moves the amount from the CDP urn to proxy's address
@@ -428,7 +429,7 @@ contract DssProxyActions is Common {
         address gemJoin,
         uint256 cdp,
         uint256 amt
-    ) public {
+    ) external {
         uint256 wad = _convertTo18(gemJoin, amt);
         // Unlocks token amount from the CDP
         manager.frob(cdp, -_toInt256(wad), 0);
@@ -442,7 +443,7 @@ contract DssProxyActions is Common {
         address ethJoin,
         uint256 cdp,
         uint256 wad
-    ) public {
+    ) external {
         // Moves the amount from the CDP urn to proxy's address
         manager.flux(cdp, address(this), wad);
         // Exits WETH amount to proxy address as a token
@@ -457,7 +458,7 @@ contract DssProxyActions is Common {
         address gemJoin,
         uint256 cdp,
         uint256 amt
-    ) public {
+    ) external {
         // Moves the amount from the CDP urn to proxy's address
         manager.flux(cdp, address(this), _convertTo18(gemJoin, amt));
         // Exits token amount to the user's wallet as a token
@@ -467,7 +468,7 @@ contract DssProxyActions is Common {
     function draw(
         uint256 cdp,
         uint256 wad
-    ) public {
+    ) external {
         // Generates debt in the CDP
         manager.frob(
             cdp,
@@ -519,7 +520,7 @@ contract DssProxyActions is Common {
         uint256 cdp,
         uint256 wad,
         address owner
-    ) public {
+    ) external {
         require(manager.owns(cdp) == owner, "DssProxyActions/owner-missmatch");
         wipe(cdp, wad);
     }
@@ -554,7 +555,7 @@ contract DssProxyActions is Common {
     function safeWipeAll(
         uint256 cdp,
         address owner
-    ) public {
+    ) external {
         require(manager.owns(cdp) == owner, "DssProxyActions/owner-missmatch");
         wipeAll(cdp);
     }
@@ -591,7 +592,7 @@ contract DssProxyActions is Common {
         address ethJoin,
         bytes32 ilk,
         uint256 wadD
-    ) public payable returns (uint256 cdp) {
+    ) external payable returns (uint256 cdp) {
         cdp = manager.open(ilk, address(this));
         lockETHAndDraw(ethJoin, cdp, wadD);
     }
@@ -631,7 +632,7 @@ contract DssProxyActions is Common {
         bytes32 ilk,
         uint256 amtC,
         uint256 wadD
-    ) public returns (uint256 cdp) {
+    ) external returns (uint256 cdp) {
         cdp = manager.open(ilk, address(this));
         lockGemAndDraw(gemJoin, cdp, amtC, wadD);
     }
@@ -641,7 +642,7 @@ contract DssProxyActions is Common {
         uint256 cdp,
         uint256 wadC,
         uint256 wadD
-    ) public {
+    ) external {
         address urn = manager.urns(cdp);
         // Joins DAI amount into the vat
         daiJoin_join(urn, wadD);
@@ -665,7 +666,7 @@ contract DssProxyActions is Common {
         address ethJoin,
         uint256 cdp,
         uint256 wadC
-    ) public {
+    ) external {
         address urn = manager.urns(cdp);
         bytes32 ilk = manager.ilks(cdp);
         (, uint256 art) = vat.urns(ilk, urn);
@@ -692,7 +693,7 @@ contract DssProxyActions is Common {
         uint256 cdp,
         uint256 amtC,
         uint256 wadD
-    ) public {
+    ) external {
         address urn = manager.urns(cdp);
         // Joins DAI amount into the vat
         daiJoin_join(urn, wadD);
@@ -713,7 +714,7 @@ contract DssProxyActions is Common {
         address gemJoin,
         uint256 cdp,
         uint256 amtC
-    ) public {
+    ) external {
         address urn = manager.urns(cdp);
         bytes32 ilk = manager.ilks(cdp);
         (, uint256 art) = vat.urns(ilk, urn);
@@ -767,7 +768,7 @@ contract DssProxyActionsEnd is Common {
         address ethJoin,
         address end,
         uint256 cdp
-    ) public {
+    ) external {
         uint256 wad = _free(end, cdp);
         // Exits WETH amount to proxy address as a token
         GemJoinLike(ethJoin).exit(address(this), wad);
@@ -781,7 +782,7 @@ contract DssProxyActionsEnd is Common {
         address gemJoin,
         address end,
         uint256 cdp
-    ) public {
+    ) external {
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(
             msg.sender,
@@ -792,7 +793,7 @@ contract DssProxyActionsEnd is Common {
     function pack(
         address end,
         uint256 wad
-    ) public {
+    ) external {
         daiJoin_join(address(this), wad);
         // Approves the end to take out DAI from the proxy's balance in the vat
         if (vat.can(address(this), address(end)) == 0) {
@@ -806,7 +807,7 @@ contract DssProxyActionsEnd is Common {
         address end,
         bytes32 ilk,
         uint256 wad
-    ) public {
+    ) external {
         EndLike(end).cash(ilk, wad);
         uint256 wadC = _mul(wad, EndLike(end).fix(ilk)) / RAY;
         // Exits WETH amount to proxy address as a token
@@ -822,7 +823,7 @@ contract DssProxyActionsEnd is Common {
         address end,
         bytes32 ilk,
         uint256 wad
-    ) public {
+    ) external {
         EndLike(end).cash(ilk, wad);
         // Exits token amount to the user's wallet as a token
         GemJoinLike(gemJoin).exit(
@@ -841,7 +842,7 @@ contract DssProxyActionsDsr is Common {
 
     function join(
         uint256 wad
-    ) public {
+    ) external {
         // Joins wad amount to the vat balance
         daiJoin_join(address(this), wad);
         // Approves the pot to take out DAI from the proxy's balance in the vat
@@ -854,7 +855,7 @@ contract DssProxyActionsDsr is Common {
 
     function exit(
         uint256 wad
-    ) public {
+    ) external {
         // Exits wad DAI from the pot (calculating the input value)
         pot.exit(_mul(wad, RAY) / pot.drip());
         // Checks the actual balance of DAI in the vat after the pot exit
@@ -871,7 +872,7 @@ contract DssProxyActionsDsr is Common {
         );
     }
 
-    function exitAll() public {
+    function exitAll() external {
         // Executes drip to count the savings accumulated until this moment
         uint256 chi = pot.drip();
         // Gets the total pie belonging to the proxy address
