@@ -1010,6 +1010,64 @@ contract DssProxyActionsTest is DssDeployTestBase, ProxyCalls {
         assertEq(dgd.balanceOf(address(this)), prevBalanceDGD + 1 * 10 ** 9 - 1); // (-1 rounding)
     }
 
+    function testEndDebtInDSProxy() public {
+        uint256 cdp = this.openLockETHAndDraw{value: 2 ether}(address(ethJoin), "ETH", 300 ether);
+        col.mint(1 ether);
+        col.approve(address(proxy), 1 ether);
+        uint256 cdp2 = this.openLockGemAndDraw(address(colJoin), "COL", 1 ether, 5 ether);
+
+        // Give direct debt to DSProxy urn
+        this.hope(address(vat), address(this));
+        realWeth.deposit{value: 2 ether}();
+        realWeth.approve(address(ethJoin), 2 ether);
+        ethJoin.join(address(proxy), 2 ether);
+        vat.frob("ETH", address(proxy), address(proxy), address(proxy), 2 ether, 150 ether);
+        col.mint(1 ether);
+        col.approve(address(colJoin), 1 ether);
+        colJoin.join(address(proxy), 1 ether);
+        vat.frob("COL", address(proxy), address(proxy), address(proxy), 1 ether, 3 ether);
+
+        this.cage(address(end));
+        end.cage("ETH");
+        end.cage("COL");
+
+        (uint256 inkV, uint256 artV) = vat.urns("ETH", manager.urns(cdp));
+        assertEq(inkV, 2 ether);
+        assertEq(artV, 300 ether);
+        (inkV, artV) = vat.urns("ETH", address(proxy));
+        assertEq(inkV, 2 ether);
+        assertEq(artV, 150 ether);
+
+        (inkV, artV) = vat.urns("COL", manager.urns(cdp2));
+        assertEq(inkV, 1 ether);
+        assertEq(artV, 5 ether);
+        (inkV, artV) = vat.urns("COL", address(proxy));
+        assertEq(inkV, 1 ether);
+        assertEq(artV, 3 ether);
+
+        uint256 prevBalanceETH = address(this).balance;
+        this.end_freeETH(address(ethJoin), address(end), cdp);
+        (inkV, artV) = vat.urns("ETH", manager.urns(cdp));
+        assertEq(inkV, 0);
+        assertEq(artV, 0);
+        (inkV, artV) = vat.urns("ETH", address(proxy));
+        assertEq(inkV, 0);
+        assertEq(artV, 0);
+        uint256 remainInkVal = 2 ether - 300 * end.tag("ETH") / 10 ** 9 + 2 ether - 150 * end.tag("ETH") / 10 ** 9;
+        assertEq(address(this).balance, prevBalanceETH + remainInkVal - 1); // -1 due to rounding
+
+        uint256 prevBalanceCol = col.balanceOf(address(this));
+        this.end_freeGem(address(colJoin), address(end), cdp2);
+        (inkV, artV) = vat.urns("COL", manager.urns(cdp2));
+        assertEq(inkV, 0);
+        assertEq(artV, 0);
+        (inkV, artV) = vat.urns("COL", address(proxy));
+        assertEq(inkV, 0);
+        assertEq(artV, 0);
+        remainInkVal = 1 ether - 5 * end.tag("COL") / 10 ** 9 + 1 ether - 3 * end.tag("COL") / 10 ** 9;
+        assertEq(col.balanceOf(address(this)), prevBalanceCol + remainInkVal);
+    }
+
     function testDSRSimpleCase() public {
         this.file(address(pot), "dsr", uint256(1.05 * 10 ** 27)); // 5% per second
         uint256 initialTime = 0; // Initial time set to 0 to avoid any intial rounding

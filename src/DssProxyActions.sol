@@ -742,20 +742,19 @@ contract DssProxyActionsEnd is Common {
         uint256 cdp
     ) internal returns (uint256 ink) {
         bytes32 ilk = manager.ilks(cdp);
-        address urn = manager.urns(cdp);
-        uint256 art;
-        (ink, art) = vat.urns(ilk, urn);
-        // If CDP still has debt, it needs to be paid
-        if (art > 0) {
-            EndLike(end).skim(ilk, urn);
-            (ink,) = vat.urns(ilk, urn);
-        }
         // Approves the manager to transfer the position to proxy's address in the vat
         if (vat.can(address(this), address(manager)) == 0) {
             vat.hope(address(manager));
         }
         // Transfers position from CDP to the proxy address
         manager.quit(cdp, address(this));
+        uint256 art;
+        (ink, art) = vat.urns(ilk, address(this));
+        // If position still has debt, it needs to be paid
+        if (art > 0) {
+            EndLike(end).skim(ilk, address(this));
+            (ink,) = vat.urns(ilk, address(this));
+        }
         // Frees the position and recovers the collateral in the vat registry
         EndLike(end).free(ilk);
     }
