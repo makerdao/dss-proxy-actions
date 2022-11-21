@@ -155,7 +155,7 @@ contract DssProxyActions is Common {
     }
 
     function _toRad(uint256 wad) internal pure returns (uint256 rad) {
-        rad = _mul(wad, 10 ** 27);
+        rad = _mul(wad, RAY);
     }
 
     function _convertTo18(address gemJoin, uint256 amt) internal returns (uint256 wad) {
