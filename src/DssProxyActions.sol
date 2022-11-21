@@ -145,10 +145,6 @@ contract DssProxyActions is Common {
         manager = ManagerLike(manager_);
     }
 
-    function _sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x - y) <= x, "DssProxyActions/sub-overflow");
-    }
-
     function _divup(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = x != 0 ? ((x - 1) / y) + 1 : 0;
     }
