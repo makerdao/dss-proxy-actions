@@ -170,30 +170,29 @@ contract DssProxyActions is Common {
     function _getDrawDart(
         address urn,
         bytes32 ilk,
-        uint256 wad
+        uint256 rad
     ) internal returns (int256 dart) {
         // Updates stability fee rate
         uint256 rate = jug.drip(ilk);
         // Gets DAI balance of the urn in the vat
-        uint256 dai = vat.dai(urn);
+        uint256 bal = vat.dai(urn);
         // If there was already enough DAI in the vat balance, just exits it without adding more debt
-        uint256 rad = _mul(wad, RAY);
-        if (dai < rad) {
-            dart = _toInt256(_divup(rad - dai, rate)); // safe since dai < rad
+        if (bal < rad) {
+            dart = _toInt256(_divup(rad - bal, rate)); // safe since dai < rad
         }
     }
 
     function _getWipeDart(
-        uint256 dai,
         address urn,
-        bytes32 ilk
+        bytes32 ilk,
+        uint256 rad
     ) internal view returns (int256 dart) {
         // Gets actual rate from the vat
         (, uint256 rate,,,) = vat.ilks(ilk);
         // Gets actual art value of the urn
         (, uint256 art) = vat.urns(ilk, urn);
         // Uses the whole dai balance in the vat to reduce the debt
-        dart = _toInt256(dai / rate);
+        dart = _toInt256(rad / rate);
         // Checks the calculated dart is not higher than urn.art (total debt), otherwise uses its value
         dart = uint256(dart) <= art ? - dart : - _toInt256(art);
     }
@@ -208,12 +207,12 @@ contract DssProxyActions is Common {
         // Gets actual art value of the urn
         (, uint256 art) = vat.urns(ilk, urn);
         // Gets DAI balance of the urn in the vat
-        uint256 dai = vat.dai(usr);
+        uint256 bal = vat.dai(usr);
         uint256 debt = _mul(art, rate);
         // If there was already enough DAI in the vat balance, no need to join more
-        if (debt > dai) {
+        if (debt > bal) {
             // Return the amount of DAI needed to join to cover remaining debt
-            wad = _divup(debt - dai, RAY); // safe since debt > dai
+            wad = _divup(debt - bal, RAY); // safe since debt > bal
         }
     }
 
@@ -472,7 +471,7 @@ contract DssProxyActions is Common {
             _getDrawDart(
                 manager.urns(cdp),
                 manager.ilks(cdp),
-                wad
+                _mul(wad, RAY)
             )
         );
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
@@ -496,7 +495,7 @@ contract DssProxyActions is Common {
             // Joins DAI amount into the vat
             daiJoin_join(urn, wad);
             // Paybacks debt to the CDP
-            manager.frob(cdp, 0, _getWipeDart(vat.dai(urn), urn, ilk));
+            manager.frob(cdp, 0, _getWipeDart(urn, ilk, vat.dai(urn)));
         } else {
              // Joins DAI amount into the vat
             daiJoin_join(address(this), wad);
@@ -507,7 +506,7 @@ contract DssProxyActions is Common {
                 address(this),
                 address(this),
                 0,
-                _getWipeDart(wad * RAY, urn, ilk)
+                _getWipeDart(urn, ilk, wad * RAY)
             );
         }
     }
@@ -571,7 +570,7 @@ contract DssProxyActions is Common {
             _getDrawDart(
                 urn,
                 manager.ilks(cdp),
-                wadD
+                _mul(wadD, RAY)
             )
         );
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
@@ -610,7 +609,7 @@ contract DssProxyActions is Common {
             _getDrawDart(
                 urn,
                 ilk,
-                wadD
+                _mul(wadD, RAY)
             )
         );
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
@@ -646,7 +645,7 @@ contract DssProxyActions is Common {
         manager.frob(
             cdp,
             -_toInt256(wadC),
-            _getWipeDart(vat.dai(urn), urn, manager.ilks(cdp))
+            _getWipeDart(urn, manager.ilks(cdp), vat.dai(urn))
         );
         // Moves the amount from the CDP urn to proxy's address
         manager.flux(cdp, address(this), wadC);
@@ -698,7 +697,7 @@ contract DssProxyActions is Common {
         manager.frob(
             cdp,
             -_toInt256(wadC),
-            _getWipeDart(vat.dai(urn), urn, manager.ilks(cdp))
+            _getWipeDart(urn, manager.ilks(cdp), vat.dai(urn))
         );
         // Moves the amount from the CDP urn to proxy's address
         manager.flux(cdp, address(this), wadC);
