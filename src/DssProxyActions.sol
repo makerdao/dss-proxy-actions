@@ -345,9 +345,9 @@ contract DssProxyActions is Common {
 
     function shift(
         uint256 cdpSrc,
-        uint256 cdpOrg
+        uint256 cdpDst
     ) external {
-        manager.shift(cdpSrc, cdpOrg);
+        manager.shift(cdpSrc, cdpDst);
     }
 
     function lockETH(
