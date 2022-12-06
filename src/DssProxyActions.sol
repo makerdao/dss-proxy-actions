@@ -154,10 +154,6 @@ contract DssProxyActions is Common {
         require(y >= 0, "DssProxyActions/int-overflow");
     }
 
-    function _toRad(uint256 wad) internal pure returns (uint256 rad) {
-        rad = _mul(wad, RAY);
-    }
-
     function _convertTo18(address gemJoin, uint256 amt) internal returns (uint256 wad) {
         // For those collaterals that have less than 18 decimals precision we need to do the conversion before passing to frob function
         // Adapters will automatically handle the difference of precision
@@ -465,17 +461,18 @@ contract DssProxyActions is Common {
         uint256 wad
     ) external {
         // Generates debt in the CDP
+        uint256 rad = _mul(wad, RAY);
         manager.frob(
             cdp,
             0,
             _getDrawDart(
                 manager.urns(cdp),
                 manager.ilks(cdp),
-                _mul(wad, RAY)
+                rad
             )
         );
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
-        manager.move(cdp, address(this), _toRad(wad));
+        manager.move(cdp, address(this), rad);
         // Allows adapter to access to proxy's DAI balance in the vat
         if (vat.can(address(this), address(daiJoin)) == 0) {
             vat.hope(address(daiJoin));
@@ -564,17 +561,18 @@ contract DssProxyActions is Common {
         // Receives ETH amount, converts it to WETH and joins it into the vat
         ethJoin_join(ethJoin, urn);
         // Locks WETH amount into the CDP and generates debt
+        uint256 radD = _mul(wadD, RAY);
         manager.frob(
             cdp,
             _toInt256(msg.value),
             _getDrawDart(
                 urn,
                 manager.ilks(cdp),
-                _mul(wadD, RAY)
+                radD
             )
         );
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
-        manager.move(cdp, address(this), _toRad(wadD));
+        manager.move(cdp, address(this), radD);
         // Allows adapter to access to proxy's DAI balance in the vat
         if (vat.can(address(this), address(daiJoin)) == 0) {
             vat.hope(address(daiJoin));
@@ -603,17 +601,18 @@ contract DssProxyActions is Common {
         // Takes token amount from user's wallet and joins into the vat
         gemJoin_join(gemJoin, urn, amtC);
         // Locks token amount into the CDP and generates debt
+        uint256 radD = _mul(wadD, RAY);
         manager.frob(
             cdp,
             _toInt256(_convertTo18(gemJoin, amtC)),
             _getDrawDart(
                 urn,
                 ilk,
-                _mul(wadD, RAY)
+                radD
             )
         );
         // Moves the DAI amount (balance in the vat in rad) to proxy's address
-        manager.move(cdp, address(this), _toRad(wadD));
+        manager.move(cdp, address(this), radD);
         // Allows adapter to access to proxy's DAI balance in the vat
         if (vat.can(address(this), address(daiJoin)) == 0) {
             vat.hope(address(daiJoin));
@@ -851,7 +850,8 @@ contract DssProxyActionsDsr is Common {
         uint256 wad
     ) external {
         // Exits wad DAI from the pot (calculating the input value)
-        pot.exit(_mul(wad, RAY) / pot.drip());
+        uint256 rad = _mul(wad, RAY);
+        pot.exit(rad / pot.drip());
         // Checks the actual balance of DAI in the vat after the pot exit
         uint256 bal = vat.dai(address(this));
         // Allows adapter to access to proxy's DAI balance in the vat
@@ -862,7 +862,7 @@ contract DssProxyActionsDsr is Common {
         // Otherwise it will do the maximum DAI balance in the vat
         daiJoin.exit(
             msg.sender,
-            bal >= _mul(wad, RAY) ? wad : bal / RAY
+            bal >= rad ? wad : bal / RAY
         );
     }
 
